@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1220" />
+    <meta name="description" content="An interactive learning toolkit for sensor dynamic characteristics, built for ENCS4380 at Birzeit University." />
+    <title>Dynamic Sensor Lab | ENCS4380</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="Dynamic Sensor Lab home">
+          <span class="brand-icon" aria-hidden="true">∿</span>
+          <span>Dynamic<span class="brand-highlight">Lab</span></span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="#experiment">Experiment</a>
+          <a href="#modules">Modules</a>
+          <a href="#team">Team</a>
+        </nav>
+        <span class="course-pill">ENCS4380 · 2026</span>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero container" id="top">
+        <div class="eyebrow"><span class="pulse-dot"></span> Interfacing Techniques · Homework 1</div>
+        <h1>Understand the <span>lag behind every sensor.</span></h1>
+        <p>Explore how a sensor responds over time. Adjust the time constant, watch the curve redraw instantly, and compare the result with the lecture's validation points.</p>
+        <div class="hero-meta">
+          <span class="tag">First-order systems</span>
+          <span class="tag">Live interactive plot</span>
+          <span class="tag">Mobile friendly</span>
+        </div>
+      </section>
+
+      <section class="experiment-section container" id="experiment" aria-labelledby="experiment-title">
+        <div class="section-heading">
+          <div>
+            <p class="overline">MODULE 01 · FIRST-ORDER TIME RESPONSE</p>
+            <h2 id="experiment-title">Step response explorer</h2>
+          </div>
+          <span class="live-label"><span class="pulse-dot"></span> Live simulation</span>
+        </div>
+
+        <div class="experiment-grid">
+          <aside class="card controls" aria-label="Simulation controls">
+            <div class="control-title"><span class="mini-icon">⚙</span><h3>Parameters</h3></div>
+            <div class="control-group">
+              <div class="control-header"><label for="tau">Time constant <strong>τ</strong></label><output id="tau-value" for="tau">3.0 s</output></div>
+              <input id="tau" type="range" min="0.5" max="15" step="0.5" value="3" />
+              <div class="range-ends"><span>0.5 s</span><span>15 s</span></div>
+            </div>
+            <div class="control-group">
+              <div class="control-header"><label for="gain">Sensor gain <strong>K</strong></label><output id="gain-value" for="gain">1.0</output></div>
+              <input id="gain" type="range" min="0.5" max="2" step="0.1" value="1" />
+              <div class="range-ends"><span>0.5</span><span>2.0</span></div>
+            </div>
+            <div class="input-note"><span>INPUT</span> Unit step, A = 1</div>
+            <div class="formula" aria-label="First-order step-response equation">y(t) = KA(1 − e<sup>−t/τ</sup>)</div>
+            <p class="helper-text">Larger τ means a slower sensor. Gain K changes the final output level.</p>
+          </aside>
+
+          <div class="card plot-card">
+            <div class="plot-header">
+              <div><h3>Sensor output</h3><p>First-order response to a unit step</p></div>
+              <span class="plot-legend"><span class="legend-line"></span> y(t)</span>
+            </div>
+            <div class="canvas-wrap"><canvas id="response-plot" role="img" aria-label="Live first-order step response plot, with markers at tau and three tau"></canvas></div>
+            <div class="chart-caption"><span><i class="marker-dot orange"></i> τ: 63.2% of final value</span><span><i class="marker-dot purple"></i> 3τ: 95.0% of final value</span></div>
+          </div>
+        </div>
+
+        <div class="validation-grid" aria-label="Step-response validation checks">
+          <div class="metric-card"><span class="metric-label">At t = τ</span><strong id="point-one">0.632</strong><span class="metric-sub">Expected: 0.632 × KA</span><span class="check-badge" id="check-one">PASS</span></div>
+          <div class="metric-card"><span class="metric-label">At t = 3τ</span><strong id="point-three">0.950</strong><span class="metric-sub">Expected: 0.950 × KA</span><span class="check-badge" id="check-three">PASS</span></div>
+          <div class="metric-card"><span class="metric-label">Final value</span><strong id="final-value">1.000</strong><span class="metric-sub">Steady-state output = KA</span><span class="metric-muted">Unit-step input</span></div>
+        </div>
+
+        <div class="predict-card" id="predict-box">
+          <div><p class="overline">PREDICT, THEN CHECK</p><h3>If τ doubles, what happens to the response?</h3><p id="prediction-feedback" aria-live="polite">Choose an answer to test your intuition.</p></div>
+          <div class="prediction-actions"><button type="button" data-answer="faster">It gets faster</button><button type="button" data-answer="slower">It gets slower</button><button type="button" data-answer="same">It stays the same</button></div>
+        </div>
+      </section>
+
+      <section class="container roadmap-section" id="modules" aria-labelledby="modules-title">
+        <div class="section-heading"><div><p class="overline">PROJECT ROADMAP</p><h2 id="modules-title">Four learning modules</h2></div><span class="subtle-text">Built incrementally by the team</span></div>
+        <div class="modules-grid">
+          <article class="module-card active"><span class="module-number">01</span><span class="status-tag active-status">Foundation live</span><h3>First-order time response</h3><p>Step response now; ramp behavior, lag, and log-error analysis are scheduled for the full module.</p></article>
+          <article class="module-card"><span class="module-number">02</span><span class="status-tag">Planned</span><h3>Frequency response</h3><p>Explore output amplitude, phase lag, Bode plots, and dynamic error for sinusoidal input.</p></article>
+          <article class="module-card"><span class="module-number">03</span><span class="status-tag">Planned</span><h3>Second-order & state space</h3><p>Examine damping, overshoot, poles, eigenvalues, and the mass–spring–damper model.</p></article>
+          <article class="module-card"><span class="module-number">04</span><span class="status-tag">Planned</span><h3>Guess the sensor</h3><p>Estimate hidden sensor parameters from a response curve and earn a score for accuracy.</p></article>
+        </div>
+      </section>
+
+      <section class="container team-section" id="team">
+        <div><p class="overline">THE PEOPLE BEHIND THE PROJECT</p><h2>Team & course</h2><p>Birzeit University · ENCS4380 Interfacing Techniques · Fall 2026</p></div>
+        <div class="team-card"><p><strong>Students</strong></p><ul><li><a href="https://github.com/EmamSamara">Emam Samara</a></li><li><a href="https://github.com/Fawzy-AbuKwaik">Fawzy AbuKwaik</a></li><li><a href="https://github.com/OmarKhaldi1465">Omar Khaldi</a></li></ul><p><strong>Instructor</strong> · <a href="https://github.com/waghanem">Dr. Wasel Ghanem</a></p></div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="container footer-inner"><span>DynamicLab · ENCS4380</span><span>Built for learning, one response at a time.</span></div></footer>
+  </body>
+</html>
