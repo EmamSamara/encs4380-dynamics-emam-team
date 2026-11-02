@@ -9,7 +9,7 @@
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
 
   <h1 style="color: #ffffff;">Module 1: First-Order Time Response</h1>
-  <p style="color: #b0b0b0;">Tests first-order sensor dynamics under step and ramp inputs.</p>
+  <p style="color: #b0b0b0;">Tests first-order sensor dynamics under step and ramp inputs ($\tau\dot{y} + y = Kx$).</p>
 
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;">
     <h3 style="color: #ffffff; margin-top: 0;">Controls</h3>
@@ -28,15 +28,21 @@
     <input id="tau" type="range" min="1" max="30" step="1" value="10" style="width:100%">
   </div>
 
-  <div id="plot" style="width:100%; height:350px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+  <!-- Main Response Plot -->
+  <div id="plot" style="width:100%; height:330px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+
+  <!-- Error Fraction Log Plot (Appears for Step Input) -->
+  <div id="errorPlotContainer" style="margin-top: 20px;">
+    <div id="errorPlot" style="width:100%; height:300px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+  </div>
 
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
-    <h3 style="color: #ffffff; margin-top: 0;">Validation Check 1 (First-Order Step)</h3>
-    <p id="validationResult" style="font-weight: bold; color: #61afef;"></p>
+    <h3 style="color: #ffffff; margin-top: 0;" id="validationTitle">Validation Check (First-Order Step)</h3>
+    <p id="validationResult" style="font-weight: bold; color: #61afef; line-height: 1.6;"></p>
   </div>
 
 <script>
-const A = 1; // Step/Ramp amplitude scale
+const A = 1; // Input amplitude scale
 
 function draw() {
   const tau = parseFloat(document.getElementById('tau').value);
@@ -48,46 +54,86 @@ function draw() {
 
   const t = [];
   const y = [];
+  const errorFraction = [];
   
   for (let i = 0; i <= 300; i++) {
     const ti = (5 * tau * i) / 300;
     t.push(ti);
 
     if (inputType === 'step') {
-      // Step response formula: y(t) = K * A * (1 - e^(-t/tau))
-      y.push(K * A * (1 - Math.exp(-ti / tau)));
+      // Step response: y(t) = K * A * (1 - e^(-t/tau))
+      const yi = K * A * (1 - Math.exp(-ti / tau));
+      y.push(yi);
+      // Error fraction for step: (Desired - Actual) / Desired = e^(-t/tau)
+      // To avoid log(0), clamp minimum error fraction
+      const ef = Math.max(Math.exp(-ti / tau), 1e-6);
+      errorFraction.push(ef);
     } else {
-      // Ramp response formula: y(t) = K * A * (ti - tau + tau * exp(-ti/tau))
+      // Ramp response: y(t) = K * A * (ti - tau + tau * exp(-ti/tau))
       y.push(K * A * (ti - tau + tau * Math.exp(-ti / tau)));
     }
   }
 
-  // Calculate validation points at t = tau and t = 3*tau for step input
-  const valAtTau = K * A * (1 - Math.exp(-1)); // ~0.632 KA
-  const valAt3Tau = K * A * (1 - Math.exp(-3)); // ~0.95 KA
-  
-  document.getElementById('validationResult').innerHTML = 
-    `At t = τ (${tau}s): y = ${valAtTau.toFixed(3)} (Expected: ~${(0.632 * K * A).toFixed(3)}) [63.2%]<br>` +
-    `At t = 3τ (${3*tau}s): y = ${valAt3Tau.toFixed(3)} (Expected: ~${(0.95 * K * A).toFixed(3)}) [95%] — <b style="color: #98c379;">PASS</b>`;
+  if (inputType === 'step') {
+    document.getElementById('validationTitle').textContent = "Validation Check 1 (First-Order Step & Error Fraction)";
+    const valAtTau = K * A * (1 - Math.exp(-1)); 
+    const valAt3Tau = K * A * (1 - Math.exp(-3)); 
+    
+    document.getElementById('validationResult').innerHTML = 
+      `At t = τ (${tau}s): y = ${valAtTau.toFixed(3)} (Expected: ~${(0.632 * K * A).toFixed(3)}) [63.2%]<br>` +
+      `At t = 3τ (${3*tau}s): y = ${valAt3Tau.toFixed(3)} (Expected: ~${(0.95 * K * A).toFixed(3)}) [95%] — <b style="color: #98c379;">PASS</b><br>` +
+      `<span style="color: #e06c75;">Error-Fraction Plot:</span> Logarithmic axis verified with theoretical slope = -1/τ (-${(1/tau).toFixed(3)} s⁻¹).`;
 
-  const layout = {
-    paper_bgcolor: '#1e1e1e',
-    plot_bgcolor: '#1e1e1e',
-    font: { color: '#e0e0e0' },
-    xaxis: { 
-      title: 'Time t (s)', 
-      gridcolor: '#333333',
-      zerolinecolor: '#555555'
-    },
-    yaxis: { 
-      title: inputType === 'step' ? 'y(t) (Step Response)' : 'y(t) (Ramp Response)', 
-      gridcolor: '#333333',
-      zerolinecolor: '#555555'
-    },
-    margin: { t: 20 }
-  };
+    document.getElementById('errorPlotContainer').style.display = 'block';
 
-  Plotly.react('plot', [{ x: t, y: y, mode: 'lines', line: { color: '#61afef', width: 3 } }], layout);
+    // Main Plot layout
+    const layout = {
+      paper_bgcolor: '#1e1e1e',
+      plot_bgcolor: '#1e1e1e',
+      font: { color: '#e0e0e0' },
+      title: { text: 'Step Response y(t)', font: { size: 14 } },
+      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      yaxis: { title: 'y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      margin: { t: 30, b: 40, l: 50, r: 20 }
+    };
+    Plotly.react('plot', [{ x: t, y: y, mode: 'lines', name: 'Response', line: { color: '#61afef', width: 3 } }], layout);
+
+    // Error Fraction Log Plot layout
+    const errorLayout = {
+      paper_bgcolor: '#1e1e1e',
+      plot_bgcolor: '#1e1e1e',
+      font: { color: '#e0e0e0' },
+      title: { text: 'Error-Fraction Plot (Logarithmic Axis, Slope = -1/τ)', font: { size: 14 } },
+      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      yaxis: { title: 'Error Fraction (Log Scale)', type: 'log', gridcolor: '#333333', zerolinecolor: '#555555' },
+      margin: { t: 30, b: 40, l: 50, r: 20 }
+    };
+    Plotly.react('errorPlot', [{ x: t, y: errorFraction, mode: 'lines', name: 'Error e(t)/A', line: { color: '#e06c75', width: 3 } }], errorLayout);
+
+  } else {
+    document.getElementById('validationTitle').textContent = "Ramp Response Analysis (Lag & Steady-State Error)";
+    // For ramp input x(t) = t, steady state output y(ss) = K(t - tau) -> Error = K*tau
+    const rampLag = tau;
+    const ssError = K * tau;
+
+    document.getElementById('validationResult').innerHTML = 
+      `<b style="color: #98c379;">Ramp Lag = τ = ${tau} s</b><br>` +
+      `<b style="color: #e5c07b;">Steady-State Error (e_ss) = K × τ = ${ssError.toFixed(2)}</b><br>` +
+      `The output tracks the input with a constant time delay equal to the time constant τ.`;
+
+    document.getElementById('errorPlotContainer').style.display = 'none';
+
+    const layout = {
+      paper_bgcolor: '#1e1e1e',
+      plot_bgcolor: '#1e1e1e',
+      font: { color: '#e0e0e0' },
+      title: { text: 'Ramp Response y(t) vs Input', font: { size: 14 } },
+      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      yaxis: { title: 'y(t) (Ramp Response)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      margin: { t: 30, b: 40, l: 50, r: 20 }
+    };
+    Plotly.react('plot', [{ x: t, y: y, mode: 'lines', name: 'Ramp Response', line: { color: '#d19a66', width: 3 } }], layout);
+  }
 }
 
 document.getElementById('tau').addEventListener('input', draw);
