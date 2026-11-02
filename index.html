@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+  <h2>First-order step response</h2>
+  <input id="tau" type="range" min="1" max="20" value="10">
+  <div id="plot"></div>
+
+  <script>
+    function draw() {
+      const tau = +document.getElementById('tau').value;
+      const t = [], y = [];
+      for (let i = 0; i <= 100; i++) {
+        t.push(i * tau / 20);
+        y.push(1 - Math.exp(-t[i] / tau));
+      }
+      Plotly.react('plot', [{ x: t, y: y }]);
+    }
+    document.getElementById('tau').oninput = draw;
+    draw();
+  </script>
+</body>
+</html>
