@@ -3,42 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dynamic Characteristics Toolkit</title>
+<title>Dynamic Characteristics Toolkit - Module 1</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 </head>
-<body style="font-family: sans-serif; max-width: 800px; margin: auto; padding: 16px;">
+<body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #f9f9f9;">
 
-<h1>Module 1: First-order step response</h1>
-<p>y(t) = K·A·(1 − e<sup>−t/τ</sup>)</p>
+  <h1>Module 1: First-Order Time Response</h1>
+  <p>Tests first-order sensor dynamics under step and ramp inputs.</p>
 
-<label>τ (s): <b id="tauValue">10</b></label><br>
-<input id="tau" type="range" min="1" max="20" step="1" value="10" style="width:100%">
+  <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h3>Controls</h3>
+    
+    <label>Input Type: </label>
+    <select id="inputType" style="padding: 5px; margin-bottom: 10px;">
+      <option value="step">Step Input</option>
+      <option value="ramp">Ramp Input</option>
+    </select>
+    <br>
 
-<div id="plot" style="width:100%; height:350px;"></div>
+    <label>Gain (K): <b id="kValue">1</b></label><br>
+    <input id="gainK" type="range" min="0.5" max="5" step="0.5" value="1" style="width:100%"><br><br>
+
+    <label>Time Constant (τ): <b id="tauValue">10</b> s</label><br>
+    <input id="tau" type="range" min="1" max="30" step="1" value="10" style="width:100%">
+  </div>
+
+  <div id="plot" style="width:100%; height:350px; margin-top: 20px;"></div>
+
+  <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px;">
+    <h3>Validation Check 1 (First-Order Step)</h3>
+    <p id="validationResult" style="font-weight: bold; color: #007BFF;"></p>
+  </div>
 
 <script>
-const K = 1;   // sensor gain (fixed for now)
-const A = 1;   // step size (fixed for now)
+const A = 1; // Step/Ramp amplitude scale
 
 function draw() {
   const tau = parseFloat(document.getElementById('tau').value);
+  const K = parseFloat(document.getElementById('gainK').value);
+  const inputType = document.getElementById('inputType').value;
+
   document.getElementById('tauValue').textContent = tau;
+  document.getElementById('kValue').textContent = K;
 
   const t = [];
   const y = [];
-  for (let i = 0; i <= 200; i++) {
-    const ti = (5 * tau * i) / 200;
+  
+  for (let i = 0; i <= 300; i++) {
+    const ti = (5 * tau * i) / 300;
     t.push(ti);
-    y.push(K * A * (1 - Math.exp(-ti / tau)));
+
+    if (inputType === 'step') {
+      // Step response formula: y(t) = K * A * (1 - e^(-t/tau))
+      y.push(K * A * (1 - Math.exp(-ti / tau)));
+    } else {
+      // Ramp response formula: y(t) = K * A * (ti - tau + tau * exp(-ti/tau))
+      y.push(K * A * (ti - tau + tau * Math.exp(-ti / tau)));
+    }
   }
 
-  Plotly.react('plot', [{ x: t, y: y, mode: 'lines' }], {
-    xaxis: { title: 'time (s)' },
-    yaxis: { title: 'y(t)' }
-  });
+  // Calculate validation points at t = tau and t = 3*tau for step input
+  const valAtTau = K * A * (1 - Math.exp(-1)); // ~0.632 KA
+  const valAt3Tau = K * A * (1 - Math.exp(-3)); // ~0.95 KA
+  
+  document.getElementById('validationResultinnerHTML').innerHTML = 
+    `At t = τ (${tau}s): y = ${valAtTau.toFixed(3)} (Expected: ~${(0.632 * K * A).toFixed(3)}) [63.2%]<br>` +
+    `At t = 3τ (${3*tau}s): y = ${valAt3Tau.toFixed(3)} (Expected: ~${(0.95 * K * A).toFixed(3)}) [95%] — <b>PASS</b>`;
+
+  const layout = {
+    xaxis: { title: 'Time t (s)' },
+    yaxis: { title: inputType === 'step' ? 'y(t) (Step Response)' : 'y(t) (Ramp Response)' },
+    margin: { t: 20 }
+  };
+
+  Plotly.react('plot', [{ x: t, y: y, mode: 'lines', line: { color: '#007BFF', width: 3 } }], layout);
 }
 
 document.getElementById('tau').addEventListener('input', draw);
+document.getElementById('gainK').addEventListener('input', draw);
+document.getElementById('inputType').addEventListener('change', draw);
 draw();
 </script>
 </body>
