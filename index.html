@@ -9,7 +9,7 @@
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
 
   <h1 style="color: #ffffff;">Module 1: First-Order Time Response</h1>
-  <p style="color: #b0b0b0;">Tests first-order sensor dynamics under step and ramp inputs[cite: 8].</p>
+  <p style="color: #b0b0b0;">Tests first-order sensor dynamics under step and ramp inputs.</p>
 
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;">
     <h3 style="color: #ffffff; margin-top: 0;">Controls</h3>
@@ -62,7 +62,7 @@ function draw() {
     }
   }
 
-  // Calculate validation points at t = tau and t = 3*tau for step input[cite: 8]
+  // Calculate validation points at t = tau and t = 3*tau for step input
   const valAtTau = K * A * (1 - Math.exp(-1)); // ~0.632 KA
   const valAt3Tau = K * A * (1 - Math.exp(-3)); // ~0.95 KA
   
