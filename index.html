@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dynamic Characteristics Toolkit</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body style="font-family: sans-serif; max-width: 800px; margin: auto; padding: 16px;">
+
+<h1>Module 1: First-order step response</h1>
+<p>y(t) = K·A·(1 − e<sup>−t/τ</sup>)</p>
+
+<label>τ (s): <b id="tauValue">10</b></label><br>
+<input id="tau" type="range" min="1" max="20" step="1" value="10" style="width:100%">
+
+<div id="plot" style="width:100%; height:350px;"></div>
+
+<script>
+const K = 1;   // sensor gain (fixed for now)
+const A = 1;   // step size (fixed for now)
+
+function draw() {
+  const tau = parseFloat(document.getElementById('tau').value);
+  document.getElementById('tauValue').textContent = tau;
+
+  const t = [];
+  const y = [];
+  for (let i = 0; i <= 200; i++) {
+    const ti = (5 * tau * i) / 200;
+    t.push(ti);
+    y.push(K * A * (1 - Math.exp(-ti / tau)));
+  }
+
+  Plotly.react('plot', [{ x: t, y: y, mode: 'lines' }], {
+    xaxis: { title: 'time (s)' },
+    yaxis: { title: 'y(t)' }
+  });
+}
+
+document.getElementById('tau').addEventListener('input', draw);
+draw();
+</script>
+</body>
+</html>
