@@ -175,7 +175,7 @@ draw();
   </label>
 
   <br>
-  
+
   <input
     id="tau2"
     type="range"
@@ -285,5 +285,39 @@ draw();
     border: 1px solid #333;
 ">
 </div>
+<script>
+const tau2Slider = document.getElementById("tau2");
+const omegaSlider = document.getElementById("omega");
+
+const tau2Value = document.getElementById("tau2Value");
+const omegaValue = document.getElementById("omegaValue");
+
+const amplitudeRatio = document.getElementById("amplitudeRatio");
+const phaseLag = document.getElementById("phaseLag");
+
+function updateModule2() {
+
+    const tau = parseFloat(tau2Slider.value);
+    const omega = parseFloat(omegaSlider.value);
+
+    tau2Value.textContent = tau.toFixed(2);
+    omegaValue.textContent = omega.toFixed(1);
+
+    const M = 1 / Math.sqrt(1 + Math.pow(omega * tau, 2));
+
+    const phiRad = -Math.atan(omega * tau);
+    const phiDeg = phiRad * 180 / Math.PI;
+
+    amplitudeRatio.textContent = M.toFixed(3);
+    phaseLag.textContent = Math.abs(phiDeg).toFixed(1) + "°";
+}
+
+
+tau2Slider.addEventListener("input", updateModule2);
+omegaSlider.addEventListener("input", updateModule2);
+
+updateModule2();
+</script>
 </body>
+
 </html>
