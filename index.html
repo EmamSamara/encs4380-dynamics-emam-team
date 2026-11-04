@@ -310,6 +310,99 @@ function updateModule2() {
 
     amplitudeRatio.textContent = M.toFixed(3);
     phaseLag.textContent = Math.abs(phiDeg).toFixed(1) + "°";
+
+    // Create time values for about 4 sine-wave periods
+const period = 2 * Math.PI / omega;
+const timeMax = 4 * period;
+
+const t = [];
+const inputSignal = [];
+const outputSignal = [];
+
+for (let i = 0; i <= 300; i++) {
+
+    const time = (i / 300) * timeMax;
+
+    t.push(time);
+
+    // Input: x(t) = sin(ωt)
+    inputSignal.push(
+        Math.sin(omega * time)
+    );
+
+    // Output: y(t) = M sin(ωt + φ)
+    outputSignal.push(
+        M * Math.sin(omega * time + phiRad)
+    );
+}
+
+
+// Input sine trace
+const inputTrace = {
+
+    x: t,
+    y: inputSignal,
+
+    mode: "lines",
+    name: "Input",
+
+    line: {
+        width: 3
+    }
+};
+
+
+// Output sine trace
+const outputTrace = {
+
+    x: t,
+    y: outputSignal,
+
+    mode: "lines",
+    name: "Output",
+
+    line: {
+        width: 3
+    }
+};
+
+
+// Plot appearance
+const sineLayout = {
+
+    title: "Input and Output Sine Waves",
+
+    xaxis: {
+        title: "Time (s)"
+    },
+
+    yaxis: {
+        title: "Amplitude",
+        range: [-1.2, 1.2]
+    },
+
+    paper_bgcolor: "#1e1e1e",
+    plot_bgcolor: "#1e1e1e",
+    font: {
+        color: "#ffffff"
+    },
+
+    margin: {
+        t: 50,
+        r: 20,
+        b: 60,
+        l: 60
+    }
+};
+
+
+// Draw or update the graph
+Plotly.react(
+    "sinePlot",
+    [inputTrace, outputTrace],
+    sineLayout,
+    { responsive: true }
+);
 }
 
 
