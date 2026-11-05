@@ -222,7 +222,8 @@ draw();
   </h3>
 
   <p>
-    If the frequency increases, what do you think will happen to the output amplitude?
+    Make a prediction first, then move the sliders (τ or ω) however you like.
+    What do you think will happen to the output?
   </p>
 
   <select
@@ -236,11 +237,19 @@ draw();
     ">
 
     <option value="">Choose your prediction</option>
-    <option value="increase">Amplitude increases</option>
-    <option value="decrease">Amplitude decreases</option>
-    <option value="same">Amplitude stays the same</option>
+    <option value="ampUp">Amplitude will increase</option>
+    <option value="ampDown">Amplitude will decrease</option>
+    <option value="phaseUp">Phase lag will increase</option>
+    <option value="phaseDown">Phase lag will decrease</option>
 
   </select>
+
+  <p id="predictionFeedback"
+   style="
+     margin-top: 12px;
+     font-weight: bold;
+   ">
+  </p>
 
 </div>
 
@@ -496,6 +505,9 @@ const validationTauMax = document.getElementById("validationTauMax");
 const validationPhase50 = document.getElementById("validationPhase50");
 const validationTest3 = document.getElementById("validationTest3");
 
+const prediction2 = document.getElementById("prediction2");
+const predictionFeedback = document.getElementById("predictionFeedback");
+
 function updateModule2() {
 
     const tau = parseFloat(tau2Slider.value);
@@ -625,10 +637,10 @@ const bodePhase = [];
 const omegaMin = omegaCutoff / 100;
 const omegaMax = omegaCutoff * 100;
 
-for (let i = 0; i <= 200; i++) {
+const logMin = Math.log10(omegaMin);
+const logMax = Math.log10(omegaMax);
 
-    const logMin = Math.log10(omegaMin);
-    const logMax = Math.log10(omegaMax);
+for (let i = 0; i <= 200; i++) {
 
     const logOmega =
         logMin + (i / 200) * (logMax - logMin);
@@ -910,6 +922,66 @@ function runModule2Validation() {
 
 }
 
+// Values at the moment the student made the prediction
+let predStartM = null;
+let predStartPhase = null;
+
+function getCurrentMandPhase() {
+    const tau = parseFloat(tau2Slider.value);
+    const omega = parseFloat(omegaSlider.value);
+    return {
+        M: 1 / Math.sqrt(1 + Math.pow(omega * tau, 2)),
+        phase: Math.atan(omega * tau) * 180 / Math.PI
+    };
+}
+
+// When the student picks a prediction: save the starting values
+function savePrediction() {
+
+    if (prediction2.value === "") {
+        predStartM = null;
+        predictionFeedback.textContent = "";
+        return;
+    }
+
+    const now = getCurrentMandPhase();
+    predStartM = now.M;
+    predStartPhase = now.phase;
+
+    predictionFeedback.textContent = "Prediction saved. Now move the sliders.";
+    predictionFeedback.style.color = "#b0b0b0";
+}
+
+// When the student moves a slider: compare with the prediction
+function checkPrediction() {
+
+    if (prediction2.value === "" || predStartM === null) return;
+
+    const now = getCurrentMandPhase();
+    const eps = 0.0005;
+
+    const ampChange = now.M - predStartM;
+    const phaseChange = now.phase - predStartPhase;
+
+    // No real change yet
+    if (Math.abs(ampChange) < eps && Math.abs(phaseChange) < eps) return;
+
+    let correct = false;
+
+    if (prediction2.value === "ampUp")    correct = ampChange > eps;
+    if (prediction2.value === "ampDown")  correct = ampChange < -eps;
+    if (prediction2.value === "phaseUp")  correct = phaseChange > eps;
+    if (prediction2.value === "phaseDown") correct = phaseChange < -eps;
+
+    if (correct) {
+        predictionFeedback.textContent = "Correct!";
+        predictionFeedback.style.color = "#98c379";
+    } else {
+        predictionFeedback.textContent = "Incorrect. Try again!";
+        predictionFeedback.style.color = "#e06c75";
+    }
+}
+
 tau2Slider.addEventListener("input", updateModule2);
 omegaSlider.addEventListener("input", updateModule2);
 
@@ -929,6 +1001,10 @@ phaseCheckFrequencyInput.addEventListener(
     "input",
     updateDynamicErrorCalculator
 );
+
+prediction2.addEventListener("change", savePrediction);
+tau2Slider.addEventListener("input", checkPrediction);
+omegaSlider.addEventListener("input", checkPrediction);
 
 updateDynamicErrorCalculator();
 runModule2Validation();
