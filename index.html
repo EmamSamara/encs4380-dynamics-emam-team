@@ -391,6 +391,87 @@ draw();
 
 </div>
 
+<!-- Module 2 Validation Checks -->
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Module 2 Validation Checks
+  </h3>
+
+  <h4 style="color: #61afef;">
+    Test 2: τ = 0.2 s, ω = 2 rad/s
+  </h4>
+
+  <p>
+    Expected Amplitude Ratio:
+    <b>0.93</b>
+  </p>
+
+  <p>
+    Calculated Amplitude Ratio:
+    <b id="validationM">---</b>
+  </p>
+
+  <p>
+    Expected Phase Lag:
+    <b>21.8°</b>
+  </p>
+
+  <p>
+    Calculated Phase Lag:
+    <b id="validationPhase">---</b>
+  </p>
+
+  <p>
+    Result:
+    <b id="validationTest2">---</b>
+  </p>
+
+
+  <hr style="
+    margin: 20px 0;
+    border: 1px solid #333;
+  ">
+
+
+  <h4 style="color: #61afef;">
+    Test 3: 100 Hz, maximum 5% dynamic error
+  </h4>
+
+  <p>
+    Expected Maximum τ:
+    <b>≈ 0.52 ms</b>
+  </p>
+
+  <p>
+    Calculated Maximum τ:
+    <b id="validationTauMax">---</b>
+  </p>
+
+  <p>
+    Expected Phase Lag at 50 Hz:
+    <b>≈ 9.3°</b>
+  </p>
+
+  <p>
+    Calculated Phase Lag:
+    <b id="validationPhase50">---</b>
+  </p>
+
+  <p>
+    Result:
+    <b id="validationTest3">---</b>
+  </p>
+
+</div>
+
 <script>
 const tau2Slider = document.getElementById("tau2");
 const omegaSlider = document.getElementById("omega");
@@ -407,6 +488,13 @@ const allowedErrorInput = document.getElementById("allowedError");
 const phaseCheckFrequencyInput = document.getElementById("phaseCheckFrequency");
 const tauMaxResult = document.getElementById("tauMaxResult");
 const phaseCheckResult = document.getElementById("phaseCheckResult");
+
+const validationM = document.getElementById("validationM");
+const validationPhase = document.getElementById("validationPhase");
+const validationTest2 = document.getElementById("validationTest2");
+const validationTauMax = document.getElementById("validationTauMax");
+const validationPhase50 = document.getElementById("validationPhase50");
+const validationTest3 = document.getElementById("validationTest3");
 
 function updateModule2() {
 
@@ -719,6 +807,109 @@ function updateDynamicErrorCalculator() {
         + "°";
 }
 
+function runModule2Validation() {
+
+    // =========================
+    // Validation Test 2
+    // =========================
+
+    const testTau = 0.2;
+    const testOmega = 2;
+
+    const testM =
+        1 / Math.sqrt(
+            1 + Math.pow(testOmega * testTau, 2)
+        );
+
+    const testPhase =
+        Math.atan(testOmega * testTau)
+        * 180 / Math.PI;
+
+
+    validationM.textContent =
+        testM.toFixed(3);
+
+    validationPhase.textContent =
+        testPhase.toFixed(1) + "°";
+
+
+    const test2Passed =
+        Math.abs(testM - 0.93) < 0.01 &&
+        Math.abs(testPhase - 21.8) < 0.2;
+
+
+    if (test2Passed) {
+
+        validationTest2.textContent = "PASS";
+        validationTest2.style.color = "#98c379";
+
+    } else {
+
+        validationTest2.textContent = "FAIL";
+        validationTest2.style.color = "#e06c75";
+
+    }
+
+
+    // =========================
+    // Validation Test 3
+    // =========================
+
+    const fMax = 100;
+    const allowedError = 0.05;
+
+    const Mmin =
+        1 - allowedError;
+
+    const omegaMax =
+        2 * Math.PI * fMax;
+
+    const tauMax =
+        Math.sqrt(
+            (1 / Math.pow(Mmin, 2)) - 1
+        ) / omegaMax;
+
+
+    const fPhase = 50;
+
+    const omegaPhase =
+        2 * Math.PI * fPhase;
+
+    const phase50 =
+        Math.atan(omegaPhase * tauMax)
+        * 180 / Math.PI;
+
+
+    const tauMaxMs =
+        tauMax * 1000;
+
+
+    validationTauMax.textContent =
+        tauMaxMs.toFixed(3) + " ms";
+
+    validationPhase50.textContent =
+        phase50.toFixed(1) + "°";
+
+
+    const test3Passed =
+        Math.abs(tauMaxMs - 0.52) < 0.02 &&
+        Math.abs(phase50 - 9.3) < 0.2;
+
+
+    if (test3Passed) {
+
+        validationTest3.textContent = "PASS";
+        validationTest3.style.color = "#98c379";
+
+    } else {
+
+        validationTest3.textContent = "FAIL";
+        validationTest3.style.color = "#e06c75";
+
+    }
+
+}
+
 tau2Slider.addEventListener("input", updateModule2);
 omegaSlider.addEventListener("input", updateModule2);
 
@@ -740,6 +931,7 @@ phaseCheckFrequencyInput.addEventListener(
 );
 
 updateDynamicErrorCalculator();
+runModule2Validation();
 
 </script>
 </body>
