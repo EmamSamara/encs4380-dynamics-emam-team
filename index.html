@@ -141,5 +141,1100 @@ document.getElementById('gainK').addEventListener('input', draw);
 document.getElementById('inputType').addEventListener('change', draw);
 draw();
 </script>
+<!--MODULE 2-->
+
+<hr style="margin: 40px 0; border: 1px solid #333;">
+
+<h1 style="color: #ffffff;">
+  Module 2: First-Order Frequency Response
+</h1>
+
+<p style="color: #b0b0b0;">
+  Explore how a first-order sensor responds to a sinusoidal input.
+</p>
+
+
+<!-- Module 2 Controls -->
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Controls
+  </h3>
+
+
+  <label>
+    Time Constant (τ):
+    <b id="tau2Value" style="color: #61afef;">0.2</b> s
+  </label>
+
+  <br>
+
+  <input
+    id="tau2"
+    type="range"
+    min="0.05"
+    max="2"
+    step="0.05"
+    value="0.2"
+    style="width: 100%;">
+    
+  <br><br>
+
+
+  <label>
+    Angular Frequency (ω):
+    <b id="omegaValue" style="color: #61afef;">2</b> rad/s
+  </label>
+
+  <br>
+
+  <input
+    id="omega"
+    type="range"
+    min="0.1"
+    max="20"
+    step="0.1"
+    value="2"
+    style="width: 100%;">
+
+</div>
+
+
+<!-- Predict then Check -->
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Predict, then check
+  </h3>
+
+  <p>
+    Make a prediction first, then move the sliders (τ or ω) however you like.
+    What do you think will happen to the output?
+  </p>
+
+  <select
+    id="prediction2"
+    style="
+      padding: 7px;
+      background-color: #2d2d2d;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 4px;
+    ">
+
+    <option value="">Choose your prediction</option>
+    <option value="ampUp">Amplitude will increase</option>
+    <option value="ampDown">Amplitude will decrease</option>
+    <option value="phaseUp">Phase lag will increase</option>
+    <option value="phaseDown">Phase lag will decrease</option>
+
+  </select>
+
+  <p id="predictionFeedback"
+   style="
+     margin-top: 12px;
+     font-weight: bold;
+   ">
+  </p>
+
+</div>
+
+
+<!-- Results -->
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Frequency Response Results
+  </h3>
+
+  <p>
+    Amplitude Ratio (M):
+    <b id="amplitudeRatio" style="color: #98c379;">---</b>
+  </p>
+
+  <p>
+    Phase Lag (φ):
+    <b id="phaseLag" style="color: #e5c07b;">---</b>
+  </p>
+
+  <p>
+    Dynamic Error (δ = M - 1):
+    <b id="dynamicError" style="color: #e06c75;">---</b>
+  </p>
+
+</div>
+
+
+<!-- Sine Wave Plot -->
+
+<div
+  id="sinePlot"
+  style="
+    width: 100%;
+    height: 350px;
+    margin-top: 20px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    border: 1px solid #333;
+">
+</div>
+
+<!-- Bode Plot -->
+
+<div
+  id="bodePlot"
+  style="
+    width: 100%;
+    height: 600px;
+    margin-top: 20px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    border: 1px solid #333;
+">
+</div>
+
+<!-- Dynamic Error Calculator -->
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Dynamic Error Calculator
+  </h3>
+
+  <p style="color: #b0b0b0;">
+    Find the maximum allowable time constant
+    for a required dynamic error.
+  </p>
+
+  <label>
+    Maximum Frequency:
+  </label>
+
+  <input
+    id="maxFrequency"
+    type="number"
+    value="100"
+    min="0.1"
+    step="1">
+
+  <span>Hz</span>
+
+  <br><br>
+
+  <label>
+    Maximum Allowed Error:
+  </label>
+
+  <input
+    id="allowedError"
+    type="number"
+    value="5"
+    min="0.1"
+    max="99"
+    step="0.1">
+
+  <span>%</span>
+
+  <br><br>
+
+  <label>
+    Phase Check Frequency:
+  </label>
+
+  <input
+    id="phaseCheckFrequency"
+    type="number"
+    value="50"
+    min="0.1"
+    step="1">
+
+  <span>Hz</span>
+
+  <hr style="
+    margin: 20px 0;
+    border: 1px solid #333;
+  ">
+
+  <p>
+    Maximum τ:
+    <b id="tauMaxResult"
+       style="color: #98c379;">
+       ---
+    </b>
+  </p>
+
+  <p>
+    Phase Lag:
+    <b id="phaseCheckResult"
+       style="color: #e5c07b;">
+       ---
+    </b>
+  </p>
+
+</div>
+
+<!-- Module 2 Validation Checks -->
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Module 2 Validation Checks
+  </h3>
+
+  <h4 style="color: #61afef;">
+    Test 2: τ = 0.2 s, ω = 2 rad/s
+  </h4>
+
+  <p>
+    Expected Amplitude Ratio:
+    <b>0.93</b>
+  </p>
+
+  <p>
+    Calculated Amplitude Ratio:
+    <b id="validationM">---</b>
+  </p>
+
+  <p>
+    Expected Phase Lag:
+    <b>21.8°</b>
+  </p>
+
+  <p>
+    Calculated Phase Lag:
+    <b id="validationPhase">---</b>
+  </p>
+
+  <p>
+    Result:
+    <b id="validationTest2">---</b>
+  </p>
+
+
+  <hr style="
+    margin: 20px 0;
+    border: 1px solid #333;
+  ">
+
+
+  <h4 style="color: #61afef;">
+    Test 3: 100 Hz, maximum 5% dynamic error
+  </h4>
+
+  <p>
+    Expected Maximum τ:
+    <b>≈ 0.52 ms</b>
+  </p>
+
+  <p>
+    Calculated Maximum τ:
+    <b id="validationTauMax">---</b>
+  </p>
+
+  <p>
+    Expected Phase Lag at 50 Hz:
+    <b>≈ 9.3°</b>
+  </p>
+
+  <p>
+    Calculated Phase Lag:
+    <b id="validationPhase50">---</b>
+  </p>
+
+  <p>
+    Result:
+    <b id="validationTest3">---</b>
+  </p>
+
+</div>
+
+<!-- BONUS: Superposition -->
+
+<hr style="margin: 40px 0; border: 1px solid #333;">
+
+<h1 style="color: #ffffff;">
+  Bonus: Superposition of Sine Waves
+</h1>
+
+<p style="color: #b0b0b0;">
+  Combine two sine-wave inputs and observe how a first-order sensor
+  attenuates and delays each frequency component differently.
+</p>
+
+<div style="
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 20px;
+">
+
+  <h3 style="color: #ffffff; margin-top: 0;">
+    Bonus Controls
+  </h3>
+
+  <label>
+    First Angular Frequency (ω₁):
+    <b id="omega1Value" style="color: #61afef;">1</b> rad/s
+  </label>
+
+  <br>
+
+  <input
+    id="omega1"
+    type="range"
+    min="0.1"
+    max="20"
+    step="0.1"
+    value="1"
+    style="width: 100%;">
+
+  <br><br>
+
+  <label>
+    Second Angular Frequency (ω₂):
+    <b id="omega2Value" style="color: #61afef;">5</b> rad/s
+  </label>
+
+  <br>
+
+  <input
+    id="omega2"
+    type="range"
+    min="0.1"
+    max="20"
+    step="0.1"
+    value="5"
+    style="width: 100%;">
+
+</div>
+
+<div
+  id="superpositionPlot"
+  style="
+    width: 100%;
+    height: 380px;
+    margin-top: 20px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    border: 1px solid #333;
+">
+</div>
+
+<script>
+const tau2Slider = document.getElementById("tau2");
+const omegaSlider = document.getElementById("omega");
+
+const tau2Value = document.getElementById("tau2Value");
+const omegaValue = document.getElementById("omegaValue");
+
+const amplitudeRatio = document.getElementById("amplitudeRatio");
+const phaseLag = document.getElementById("phaseLag");
+const dynamicError = document.getElementById("dynamicError");
+
+const maxFrequencyInput = document.getElementById("maxFrequency");
+const allowedErrorInput = document.getElementById("allowedError");
+const phaseCheckFrequencyInput = document.getElementById("phaseCheckFrequency");
+const tauMaxResult = document.getElementById("tauMaxResult");
+const phaseCheckResult = document.getElementById("phaseCheckResult");
+
+const validationM = document.getElementById("validationM");
+const validationPhase = document.getElementById("validationPhase");
+const validationTest2 = document.getElementById("validationTest2");
+const validationTauMax = document.getElementById("validationTauMax");
+const validationPhase50 = document.getElementById("validationPhase50");
+const validationTest3 = document.getElementById("validationTest3");
+
+const prediction2 = document.getElementById("prediction2");
+const predictionFeedback = document.getElementById("predictionFeedback");
+
+const omega1Slider = document.getElementById("omega1");
+const omega2Slider = document.getElementById("omega2");
+const omega1Value = document.getElementById("omega1Value");
+const omega2Value = document.getElementById("omega2Value");
+
+function updateModule2() {
+
+    const tau = parseFloat(tau2Slider.value);
+    const omega = parseFloat(omegaSlider.value);
+
+    tau2Value.textContent = tau.toFixed(2);
+    omegaValue.textContent = omega.toFixed(1);
+
+    const M = 1 / Math.sqrt(1 + Math.pow(omega * tau, 2));
+
+    const phiRad = -Math.atan(omega * tau);
+    const phiDeg = phiRad * 180 / Math.PI;
+
+    const delta = M - 1;
+
+    amplitudeRatio.textContent = M.toFixed(3);
+    phaseLag.textContent = Math.abs(phiDeg).toFixed(1) + "°";
+
+    dynamicError.textContent =delta.toFixed(3) + " (" + (delta * 100).toFixed(1) + "%)";
+
+    // Create time values for about 4 sine-wave periods
+const period = 2 * Math.PI / omega;
+const timeMax = 4 * period;
+
+const t = [];
+const inputSignal = [];
+const outputSignal = [];
+
+for (let i = 0; i <= 300; i++) {
+
+    const time = (i / 300) * timeMax;
+
+    t.push(time);
+
+    // Input: x(t) = sin(ωt)
+    inputSignal.push(
+        Math.sin(omega * time)
+    );
+
+    // Output: y(t) = M sin(ωt + φ)
+    outputSignal.push(
+        M * Math.sin(omega * time + phiRad)
+    );
+}
+
+
+// Input sine trace
+const inputTrace = {
+
+    x: t,
+    y: inputSignal,
+
+    mode: "lines",
+    name: "Input",
+
+    line: {
+        width: 3
+    }
+};
+
+
+// Output sine trace
+const outputTrace = {
+
+    x: t,
+    y: outputSignal,
+
+    mode: "lines",
+    name: "Output",
+
+    line: {
+        width: 3
+    }
+};
+
+
+// Plot appearance
+const sineLayout = {
+
+    title: "Input and Output Sine Waves",
+
+    xaxis: {
+        title: "Time (s)"
+    },
+
+    yaxis: {
+        title: "Amplitude",
+        range: [-1.2, 1.2]
+    },
+
+    paper_bgcolor: "#1e1e1e",
+    plot_bgcolor: "#1e1e1e",
+    font: {
+        color: "#ffffff"
+    },
+
+    margin: {
+        t: 50,
+        r: 20,
+        b: 60,
+        l: 60
+    }
+};
+
+
+// Draw or update the graph
+Plotly.react(
+    "sinePlot",
+    [inputTrace, outputTrace],
+    sineLayout,
+    { responsive: true }
+);
+
+// BODE PLOT 
+
+// Cutoff frequency
+const omegaCutoff = 1 / tau;
+
+
+// Arrays for Bode plot
+const bodeOmega = [];
+const bodeMagnitude = [];
+const bodePhase = [];
+
+
+// Create logarithmically spaced frequency values
+const omegaMin = omegaCutoff / 100;
+const omegaMax = omegaCutoff * 100;
+
+const logMin = Math.log10(omegaMin);
+const logMax = Math.log10(omegaMax);
+
+for (let i = 0; i <= 200; i++) {
+
+    const logOmega =
+        logMin + (i / 200) * (logMax - logMin);
+
+    const w = Math.pow(10, logOmega);
+
+
+    // Amplitude ratio at this frequency
+    const M_bode =
+        1 / Math.sqrt(1 + Math.pow(w * tau, 2));
+
+
+
+    // Phase in degrees
+    const phaseDeg =
+        -Math.atan(w * tau) * 180 / Math.PI;
+
+
+    bodeOmega.push(w);
+    bodeMagnitude.push(M_bode);
+    bodePhase.push(phaseDeg);
+}
+
+
+// Magnitude trace
+const magnitudeTrace = {
+
+    x: bodeOmega,
+    y: bodeMagnitude,
+
+    mode: "lines",
+    name: "Magnitude",
+
+    xaxis: "x",
+    yaxis: "y",
+
+    line: {
+        width: 3
+    }
+};
+
+
+// Phase trace
+const phaseTrace = {
+
+    x: bodeOmega,
+    y: bodePhase,
+
+    mode: "lines",
+    name: "Phase",
+
+    xaxis: "x2",
+    yaxis: "y2",
+
+    line: {
+        width: 3
+    }
+};
+
+
+// Bode plot layout
+const bodeLayout = {
+
+    title:
+        "Bode Plot — Cutoff ωc = "
+        + omegaCutoff.toFixed(2)
+        + " rad/s",
+
+    grid: {
+        rows: 2,
+        columns: 1,
+        pattern: "independent"
+    },
+
+
+    xaxis: {
+        type: "log",
+        title: "Angular Frequency ω (rad/s)"
+    },
+
+    yaxis: {
+        title: "Amplitude Ratio M"
+    },
+
+
+    xaxis2: {
+        type: "log",
+        title: "Angular Frequency ω (rad/s)"
+    },
+
+    yaxis2: {
+        title: "Phase (degrees)"
+    },
+
+
+    paper_bgcolor: "#1e1e1e",
+    plot_bgcolor: "#1e1e1e",
+
+    font: {
+        color: "#ffffff"
+    },
+
+
+    // Vertical lines showing cutoff frequency
+    shapes: [
+
+        {
+            type: "line",
+
+            x0: omegaCutoff,
+            x1: omegaCutoff,
+
+            y0: 0,
+            y1: 1,
+
+            xref: "x",
+            yref: "paper",
+
+            line: {
+                dash: "dash",
+                width: 2
+            }
+        }
+
+    ]
+};
+
+
+// Draw Bode plot
+Plotly.react(
+    "bodePlot",
+    [magnitudeTrace, phaseTrace],
+    bodeLayout,
+    { responsive: true }
+);
+}
+
+function updateSuperposition() {
+
+    // Use the same time constant from Module 2
+    const tau = parseFloat(tau2Slider.value);
+
+    // Read both angular frequencies
+    const omega1 = parseFloat(omega1Slider.value);
+    const omega2 = parseFloat(omega2Slider.value);
+
+    // Update displayed values
+    omega1Value.textContent = omega1.toFixed(1);
+    omega2Value.textContent = omega2.toFixed(1);
+
+
+    // Amplitude ratios
+    const M1 =
+        1 / Math.sqrt(1 + Math.pow(omega1 * tau, 2));
+
+    const M2 =
+        1 / Math.sqrt(1 + Math.pow(omega2 * tau, 2));
+
+
+    // Phase lags in radians
+    const phi1 =
+        -Math.atan(omega1 * tau);
+
+    const phi2 =
+        -Math.atan(omega2 * tau);
+
+
+    // Use the slower frequency to choose the time range
+    const omegaMin =
+        Math.min(omega1, omega2);
+
+    const period =
+        2 * Math.PI / omegaMin;
+
+    const timeMax =
+        4 * period;
+
+
+    const t = [];
+    const combinedInput = [];
+    const combinedOutput = [];
+
+
+    for (let i = 0; i <= 500; i++) {
+
+        const time =
+            (i / 500) * timeMax;
+
+        t.push(time);
+
+
+        // Combined input
+        const input =
+            Math.sin(omega1 * time)
+            +
+            Math.sin(omega2 * time);
+
+
+        // Sensor output
+        const output =
+            M1 * Math.sin(
+                omega1 * time + phi1
+            )
+            +
+            M2 * Math.sin(
+                omega2 * time + phi2
+            );
+
+
+        combinedInput.push(input);
+        combinedOutput.push(output);
+    }
+
+
+    const inputTrace = {
+
+        x: t,
+        y: combinedInput,
+
+        mode: "lines",
+        name: "Combined Input",
+
+        line: {
+            width: 3
+        }
+    };
+
+
+    const outputTrace = {
+
+        x: t,
+        y: combinedOutput,
+
+        mode: "lines",
+        name: "Sensor Output",
+
+        line: {
+            width: 3
+        }
+    };
+
+
+    const layout = {
+
+        title:
+            "Superposition: Combined Input vs Sensor Output",
+
+        xaxis: {
+            title: "Time (s)"
+        },
+
+        yaxis: {
+            title: "Amplitude"
+        },
+
+        paper_bgcolor: "#1e1e1e",
+        plot_bgcolor: "#1e1e1e",
+
+        font: {
+            color: "#ffffff"
+        },
+
+        margin: {
+            t: 50,
+            r: 20,
+            b: 60,
+            l: 60
+        }
+    };
+
+
+    Plotly.react(
+        "superpositionPlot",
+        [inputTrace, outputTrace],
+        layout,
+        { responsive: true }
+    );
+}
+
+function updateDynamicErrorCalculator() {
+
+    const fMax =
+        parseFloat(maxFrequencyInput.value);
+
+    const errorPercent =
+        parseFloat(allowedErrorInput.value);
+
+    const fPhase =
+        parseFloat(phaseCheckFrequencyInput.value);
+
+    const error =
+        errorPercent / 100;
+
+    const Mmin =
+        1 - error;
+
+    const omegaMax =
+        2 * Math.PI * fMax;
+
+    const tauMax =
+        Math.sqrt(
+            (1 / Math.pow(Mmin, 2)) - 1
+        ) / omegaMax;
+
+    const omegaPhase =
+        2 * Math.PI * fPhase;
+
+    const phase =
+        Math.atan(omegaPhase * tauMax)
+        * 180 / Math.PI;
+
+    tauMaxResult.textContent =
+        (tauMax * 1000).toFixed(3)
+        + " ms";
+
+    phaseCheckResult.textContent =
+        phase.toFixed(1)
+        + "°";
+}
+
+function runModule2Validation() {
+
+    // =========================
+    // Validation Test 2
+    // =========================
+
+    const testTau = 0.2;
+    const testOmega = 2;
+
+    const testM =
+        1 / Math.sqrt(
+            1 + Math.pow(testOmega * testTau, 2)
+        );
+
+    const testPhase =
+        Math.atan(testOmega * testTau)
+        * 180 / Math.PI;
+
+
+    validationM.textContent =
+        testM.toFixed(3);
+
+    validationPhase.textContent =
+        testPhase.toFixed(1) + "°";
+
+
+    const test2Passed =
+        Math.abs(testM - 0.93) < 0.01 &&
+        Math.abs(testPhase - 21.8) < 0.2;
+
+
+    if (test2Passed) {
+
+        validationTest2.textContent = "PASS";
+        validationTest2.style.color = "#98c379";
+
+    } else {
+
+        validationTest2.textContent = "FAIL";
+        validationTest2.style.color = "#e06c75";
+
+    }
+
+
+    // =========================
+    // Validation Test 3
+    // =========================
+
+    const fMax = 100;
+    const allowedError = 0.05;
+
+    const Mmin =
+        1 - allowedError;
+
+    const omegaMax =
+        2 * Math.PI * fMax;
+
+    const tauMax =
+        Math.sqrt(
+            (1 / Math.pow(Mmin, 2)) - 1
+        ) / omegaMax;
+
+
+    const fPhase = 50;
+
+    const omegaPhase =
+        2 * Math.PI * fPhase;
+
+    const phase50 =
+        Math.atan(omegaPhase * tauMax)
+        * 180 / Math.PI;
+
+
+    const tauMaxMs =
+        tauMax * 1000;
+
+
+    validationTauMax.textContent =
+        tauMaxMs.toFixed(3) + " ms";
+
+    validationPhase50.textContent =
+        phase50.toFixed(1) + "°";
+
+
+    const test3Passed =
+        Math.abs(tauMaxMs - 0.52) < 0.02 &&
+        Math.abs(phase50 - 9.3) < 0.2;
+
+
+    if (test3Passed) {
+
+        validationTest3.textContent = "PASS";
+        validationTest3.style.color = "#98c379";
+
+    } else {
+
+        validationTest3.textContent = "FAIL";
+        validationTest3.style.color = "#e06c75";
+
+    }
+
+}
+
+// Values at the moment the student made the prediction
+let predStartM = null;
+let predStartPhase = null;
+
+function getCurrentMandPhase() {
+    const tau = parseFloat(tau2Slider.value);
+    const omega = parseFloat(omegaSlider.value);
+    return {
+        M: 1 / Math.sqrt(1 + Math.pow(omega * tau, 2)),
+        phase: Math.atan(omega * tau) * 180 / Math.PI
+    };
+}
+
+// When the student picks a prediction: save the starting values
+function savePrediction() {
+
+    if (prediction2.value === "") {
+        predStartM = null;
+        predictionFeedback.textContent = "";
+        return;
+    }
+
+    const now = getCurrentMandPhase();
+    predStartM = now.M;
+    predStartPhase = now.phase;
+
+    predictionFeedback.textContent = "Prediction saved. Now move the sliders.";
+    predictionFeedback.style.color = "#b0b0b0";
+}
+
+// When the student moves a slider: compare with the prediction
+function checkPrediction() {
+
+    if (prediction2.value === "" || predStartM === null) return;
+
+    const now = getCurrentMandPhase();
+    const eps = 0.0005;
+
+    const ampChange = now.M - predStartM;
+    const phaseChange = now.phase - predStartPhase;
+
+    // No real change yet
+    if (Math.abs(ampChange) < eps && Math.abs(phaseChange) < eps) return;
+
+    let correct = false;
+
+    if (prediction2.value === "ampUp")    correct = ampChange > eps;
+    if (prediction2.value === "ampDown")  correct = ampChange < -eps;
+    if (prediction2.value === "phaseUp")  correct = phaseChange > eps;
+    if (prediction2.value === "phaseDown") correct = phaseChange < -eps;
+
+    if (correct) {
+        predictionFeedback.textContent = "Correct!";
+        predictionFeedback.style.color = "#98c379";
+    } else {
+        predictionFeedback.textContent = "Incorrect. Try again!";
+        predictionFeedback.style.color = "#e06c75";
+    }
+}
+
+tau2Slider.addEventListener("input", updateModule2);
+omegaSlider.addEventListener("input", updateModule2);
+
+updateModule2();
+
+maxFrequencyInput.addEventListener(
+    "input",
+    updateDynamicErrorCalculator
+);
+
+allowedErrorInput.addEventListener(
+    "input",
+    updateDynamicErrorCalculator
+);
+
+phaseCheckFrequencyInput.addEventListener(
+    "input",
+    updateDynamicErrorCalculator
+);
+
+prediction2.addEventListener("change", savePrediction);
+tau2Slider.addEventListener("input", checkPrediction);
+omegaSlider.addEventListener("input", checkPrediction);
+
+omega1Slider.addEventListener("input",updateSuperposition);
+omega2Slider.addEventListener("input",updateSuperposition);
+tau2Slider.addEventListener("input",updateSuperposition);
+
+updateDynamicErrorCalculator();
+runModule2Validation();
+updateSuperposition();
+
+</script>
 </body>
+
 </html>
