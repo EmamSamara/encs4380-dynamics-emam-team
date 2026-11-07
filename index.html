@@ -1459,31 +1459,39 @@ draw3();
 <script>
   let module4TrueTau = 4;
   const module4PlotElement = document.getElementById('module4Plot');
-  const module4Time = [];
-  const module4Output = [];
-  for(let i = 0; i <= 300; i++) {
-    const ti = i / 10;
-    module4Time.push(ti);
-    module4Output.push(1 - Math.exp(-ti / module4TrueTau));
+  function drawModule4(){
+    const module4Time = [];
+    const module4Output = [];
+    for(let i = 0; i <= 300; i++) {
+      const ti = i / 10;
+      module4Time.push(ti);
+      module4Output.push(1 - Math.exp(-ti / module4TrueTau));
+      }
+      const module4Trace = {
+        x: module4Time,
+        y: module4Output,
+        mode: 'lines',
+        name: 'Unknown Sensor',
+        line: { color: '#61afef', width: 3 }
+      };
+      const module4Layout = {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font: { color: '#e0e0e0' },
+        title: { text: 'Unknown Sensor Response', font: { size: 14 } },
+        xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        margin: { t: 30, b: 40, l: 50, r: 20 }
+      };
+      Plotly.react(module4PlotElement, [module4Trace], module4Layout, {responsive: true});
     }
-    const module4Trace = {
-      x: module4Time,
-      y: module4Output,
-      mode: 'lines',
-      name: 'Unknown Sensor',
-      line: { color: '#61afef', width: 3 }
-    };
-    const module4Layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Unknown Sensor Response', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
-    };
-    Plotly.react(module4PlotElement, [module4Trace], module4Layout, {responsive: true});
-</script>
+
+    function newModule4Sensor(){
+      module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+      drawModule4();
+    }
+    newModule4Sensor();
+    </script>
 
 </body>
 
