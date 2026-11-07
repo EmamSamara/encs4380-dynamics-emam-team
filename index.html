@@ -1498,6 +1498,29 @@ draw3();
     const module4NewSensorButton = document.getElementById('module4NewSensor');
     module4NewSensorButton.addEventListener('click', newModule4Sensor);
     newModule4Sensor(); // Draw the initial sensor
+
+    function checkModule4Guess() {  // Function to check the user's guess value
+      const guessedTau = Number(module4InputTau.value);
+      if(Number.isFinite(guessedTau) && guessedTau > 0){
+        const relativeError = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
+        if (relativeError <= 0.1 || relativeError <= 0.1 + 1e-12) {
+          module4CheckResult.textContent = 'Within 10% -> full marks!';
+          module4CheckResult.style.color = '#98c379';
+        }
+        else{
+          module4CheckResult.textContent = 'Outside the 10% tolerance.';
+          module4CheckResult.style.color = '#e06c75';
+        }
+      }
+      else
+      {
+        module4CheckResult.textContent = 'Please enter a valid positive number for τ.';
+        module4CheckResult.style.color = '#e06c75';
+        return;
+      }
+    }
+    const module4CheckButton = document.getElementById('module4Check');
+    module4CheckButton.addEventListener('click', checkModule4Guess);
     </script>
 
 </body>
