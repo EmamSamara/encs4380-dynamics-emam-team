@@ -1467,6 +1467,7 @@ draw3();
   let module4RoundScored = false;
   let module4RoundsPlayed = 0;
   let module4TotalScore = 0;
+  let module4TrueK = 1; // Assuming K is always 1 for simplicity
   const module4InputTau = document.getElementById('module4TauGuess');
   const module4CheckResult = document.getElementById('module4Result');
   const module4PlotElement = document.getElementById('module4Plot');
@@ -1486,9 +1487,9 @@ draw3();
       const ti = i / 10;
       module4Time.push(ti);
       if (guessedTau !== null){ // only calculate the guessed output if a guess has been added
-        module4GuessOutput.push(1 - Math.exp(-ti / guessedTau));
+        module4GuessOutput.push(module4TrueK * (1 - Math.exp(-ti / guessedTau)));
       }
-      const trueOutput = 1 - Math.exp(-ti / module4TrueTau);
+      const trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
       module4Output.push(trueOutput);
       module4MeasuredOutput.push(trueOutput + module4Noise[i]);
       }
@@ -1535,8 +1536,10 @@ draw3();
       module4CheckResult.textContent = '';
       module4HintText.textContent = '';
       module4Noise = [];
+      module4TrueK = 0.5 + (1.5 * Math.random()); // Random K between 0.5 and 2
       for(let i = 0; i <= 300; i++) {
-        module4Noise.push((Math.random() - 0.5) * 0.02); // Random noise between -0.01 and 0.01
+        const noise = module4TrueK * (Math.random() - 0.5) * 0.02; // Random noise between -1% and +1% of K
+        module4Noise.push(noise); // Random noise between -0.01 and 0.01 of K
       }
       drawModule4();
     }
