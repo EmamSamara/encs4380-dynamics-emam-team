@@ -1452,11 +1452,22 @@ draw3();
 <div id="module4Plot" style="background-color: #1e1e1e; height: 350px; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); border: 1px solid #333;"></div>
 
 <div style="background: #1e1e1e; padding: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
-  <label for="module4TauGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;"> Your estimate of τ (seconds):</label>
-  <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; margin: 4px">
-  <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">Check Guess</button>
-  <button id="module4HintButton" type="button" style="font-weight: bold; background-color: #130f1a; color: #d8c4fa; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">Hint</button> 
-  <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #2d2929; color: #e0e0e0; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">New Sensor</button>
+  <p style="color:#e0e0e0; margin: 0 0 16px;"> Estimate time constant τ (seconds) and gain K:</p>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px;"></div>
+    <div style="flex: 1 1 200px;">
+      <label for="module4TauGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">τ: </label>
+      <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; margin: 4px">
+    </div>
+    <div style="flex: 1 1 200px;">
+      <label for="module4KGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">K: </label>
+      <input id="module4KGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; margin: 4px">
+    </div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;"></div>
+    <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Check Guess</button>
+    <button id="module4HintButton" type="button" style="font-weight: bold; background-color: #130f1a; color: #d8c4fa; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Hint</button> 
+    <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #2d2929; color: #e0e0e0; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">New Sensor</button>
+  </div>
   <div id="module4HintText" style="margin-top: 12px; color:#b0b0b0"></div>
   <div id="module4Result" style="margin-top: 12px;"></div>
   <div id ="module4Score" style="margin-top: 12px;"></div>
@@ -1467,7 +1478,7 @@ draw3();
   let module4RoundScored = false;
   let module4RoundsPlayed = 0;
   let module4TotalScore = 0;
-  let module4TrueK = 1; // Assuming K is always 1 for simplicity
+  let module4TrueK = 1; // Assuming K is initially 1 for simplicity
   const module4InputTau = document.getElementById('module4TauGuess');
   const module4CheckResult = document.getElementById('module4Result');
   const module4PlotElement = document.getElementById('module4Plot');
@@ -1476,9 +1487,10 @@ draw3();
   const module4CheckButton = document.getElementById('module4Check');
   const module4HintButton = document.getElementById('module4HintButton');
   const module4HintText = document.getElementById('module4HintText');
+  const module4InputK = document.getElementById('module4KGuess');
   let module4Noise = [];
 
-  function drawModule4(guessedTau = null){
+  function drawModule4(guessedTau = null, guessedK = null) {
     const module4Time = [];
     const module4Output = [];
     const module4GuessOutput = [];
@@ -1486,8 +1498,8 @@ draw3();
     for(let i = 0; i <= 300; i++) {
       const ti = i / 10;
       module4Time.push(ti);
-      if (guessedTau !== null){ // only calculate the guessed output if a guess has been added
-        module4GuessOutput.push(module4TrueK * (1 - Math.exp(-ti / guessedTau)));
+      if (guessedTau !== null && guessedK !== null){ // only calculate the guessed output if a guess has been added
+        module4GuessOutput.push(guessedK * (1 - Math.exp(-ti / guessedTau)));
       }
       const trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
       module4Output.push(trueOutput);
@@ -1501,7 +1513,7 @@ draw3();
         line: { color: '#61afef', width: 3 }
       };
       const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
-      if (guessedTau !== null){ // insert the guessed and the true traces if a guess has been made
+      if (guessedTau !== null && guessedK !== null){ // insert the guessed and the true traces if a guess has been made
         module4Traces.push({
           x: module4Time,
           y: module4GuessOutput,
@@ -1533,6 +1545,7 @@ draw3();
       module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
       module4RoundScored = false;
       module4InputTau.value = '';
+      module4InputK.value = '';
       module4CheckResult.textContent = '';
       module4HintText.textContent = '';
       module4Noise = [];
@@ -1553,26 +1566,39 @@ draw3();
         return;
       }  
     const guessedTau = Number(module4InputTau.value);
-      if(Number.isFinite(guessedTau) && guessedTau > 0){
-        const relativeError = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
+    const guessedK = Number(module4InputK.value);
+      if(Number.isFinite(guessedTau) && guessedTau > 0 && Number.isFinite(guessedK) && guessedK > 0) {
+        const relativeErrorTau = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
+        const relativeErrorK = Math.abs(guessedK - module4TrueK) / module4TrueK;
         module4RoundsPlayed++;
-        if (relativeError <= 0.1 + 1e-12) {
+        if (relativeErrorTau <= 0.1 + 1e-12 && relativeErrorK <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
           module4CheckResult.textContent = 'Within 10% -> full marks!';
           module4CheckResult.style.color = '#98c379';
           module4TotalScore++;
         }
-        else{
-          module4CheckResult.textContent = 'Outside the 10% tolerance.';
+        else if (relativeErrorTau > 0.1 + 1e-12 && relativeErrorK > 0.1 + 1e-12) {
+          module4CheckResult.textContent = 'Outside the 10% of τ & K.';
           module4CheckResult.style.color = '#e06c75';
         }
+        else if (relativeErrorTau > 0.1 + 1e-12){
+          module4CheckResult.textContent = 'Outside the 10% of τ.';
+          module4CheckResult.style.color = '#e06c75';
+        }
+        else {
+          module4CheckResult.textContent = 'Outside the 10% of K.';
+          module4CheckResult.style.color = '#e06c75';
+        }
+        
         module4RoundScored = true;
         module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
-        module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeError * 100).toFixed(1) + '%.';
-        drawModule4(guessedTau);
+        module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeErrorTau * 100).toFixed(1) + '%.';
+        module4CheckResult.textContent += ' | True K = ' + module4TrueK.toFixed(2) + ', your guess = ' + guessedK.toFixed(2) + ', relative error = ' + (relativeErrorK * 100).toFixed(1) + '%.';
+
+        drawModule4(guessedTau, guessedK);
       }
       else
       {
-        module4CheckResult.textContent = 'Please enter a valid positive number for τ.';
+        module4CheckResult.textContent = 'Please enter a valid positive number for τ & K.';
         module4CheckResult.style.color = '#e06c75';
         return;
       }
