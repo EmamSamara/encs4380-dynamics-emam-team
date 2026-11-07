@@ -1458,6 +1458,8 @@ draw3();
 
 <script>
   let module4TrueTau = 4;
+  const module4InputTau = document.getElementById('module4TauGuess');
+  const module4CheckResult = document.getElementById('module4Result');
   const module4PlotElement = document.getElementById('module4Plot');
   function drawModule4(){
     const module4Time = [];
@@ -1488,12 +1490,14 @@ draw3();
 
     function newModule4Sensor(){
       module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+      module4InputTau.value = '';
+      module4CheckResult.textContent = '';
       drawModule4();
     }
 
     const module4NewSensorButton = document.getElementById('module4NewSensor');
     module4NewSensorButton.addEventListener('click', newModule4Sensor);
-    
+    newModule4Sensor(); // Draw the initial sensor
     </script>
 
 </body>
