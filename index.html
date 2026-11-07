@@ -1475,34 +1475,45 @@ draw3();
   const module4CheckButton = document.getElementById('module4Check');
   const module4HintButton = document.getElementById('module4HintButton');
   const module4HintText = document.getElementById('module4HintText');
-  
+  let module4Noise = [];
+
   function drawModule4(guessedTau = null){
     const module4Time = [];
     const module4Output = [];
     const module4GuessOutput = [];
+    const module4MeasuredOutput = [];
     for(let i = 0; i <= 300; i++) {
       const ti = i / 10;
       module4Time.push(ti);
-      if (guessedTau !== null){ // only calculate the guessed output if a guess has been made
+      if (guessedTau !== null){ // only calculate the guessed output if a guess has been added
         module4GuessOutput.push(1 - Math.exp(-ti / guessedTau));
       }
-      module4Output.push(1 - Math.exp(-ti / module4TrueTau));
+      const trueOutput = 1 - Math.exp(-ti / module4TrueTau);
+      module4Output.push(trueOutput);
+      module4MeasuredOutput.push(trueOutput + module4Noise[i]);
       }
       const module4Trace = {
         x: module4Time,
-        y: module4Output,
+        y: module4MeasuredOutput,
         mode: 'lines',
         name: 'Unknown Sensor',
         line: { color: '#61afef', width: 3 }
       };
-      const module4Traces = [module4Trace];
-      if (guessedTau !== null){ // insert the guessed trace only if a guess has been made
+      const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
+      if (guessedTau !== null){ // insert the guessed and the true traces if a guess has been made
         module4Traces.push({
           x: module4Time,
           y: module4GuessOutput,
           mode: 'lines',
           name: 'Your Guess',
           line: { color: '#e5c07b', width: 3, dash: 'dash' }
+        },
+        {
+          x: module4Time,
+          y: module4Output,
+          mode: 'lines',
+          name: 'True Response',
+          line: { color: '#98c379', width: 2}
         });
       }
       const module4Layout = {
@@ -1516,15 +1527,18 @@ draw3();
       };
       Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
     }
-
+    // Draw the new sensor wave when click on the "New Sensor" button
     function newModule4Sensor(){
       module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
       module4RoundScored = false;
       module4InputTau.value = '';
       module4CheckResult.textContent = '';
       module4HintText.textContent = '';
+      module4Noise = [];
+      for(let i = 0; i <= 300; i++) {
+        module4Noise.push((Math.random() - 0.5) * 0.02); // Random noise between -0.01 and 0.01
+      }
       drawModule4();
-      
     }
 
     const module4NewSensorButton = document.getElementById('module4NewSensor');
