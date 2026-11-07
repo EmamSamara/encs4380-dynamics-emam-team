@@ -93,10 +93,13 @@ if (typeof module !== "undefined") {
 </script>
 <style>
   #module4Check:hover{
-    background-color: #afd1ed !important;
+    background-color: #ccddec !important;
   }
    #module4NewSensor:hover{
-    background-color: #afd1ed !important;
+    background-color: #abaaaa !important;
+  }
+  #module4HintButton:hover{
+    background-color: #ab9fc4 !important;
   }
   </style>
 </head>
@@ -1451,8 +1454,10 @@ draw3();
 <div style="background: #1e1e1e; padding: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
   <label for="module4TauGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;"> Your estimate of τ (seconds):</label>
   <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; margin: 4px">
-  <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">Check Guess</button> 
-  <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">New Sensor</button>
+  <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">Check Guess</button>
+  <button id="module4HintButton" type="button" style="font-weight: bold; background-color: #130f1a; color: #d8c4fa; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">Hint</button> 
+  <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #2d2929; color: #e0e0e0; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">New Sensor</button>
+  <div id="module4HintText" style="margin-top: 12px; color:#b0b0b0"></div>
   <div id="module4Result" style="margin-top: 12px;"></div>
   <div id ="module4Score" style="margin-top: 12px;"></div>
 </div>
@@ -1467,6 +1472,10 @@ draw3();
   const module4PlotElement = document.getElementById('module4Plot');
   const module4ScoreElement = document.getElementById('module4Score');
   module4ScoreElement.textContent = 'Score: 0 / 0';
+  const module4CheckButton = document.getElementById('module4Check');
+  const module4HintButton = document.getElementById('module4HintButton');
+  const module4HintText = document.getElementById('module4HintText');
+  
   function drawModule4(guessedTau = null){
     const module4Time = [];
     const module4Output = [];
@@ -1513,6 +1522,7 @@ draw3();
       module4RoundScored = false;
       module4InputTau.value = '';
       module4CheckResult.textContent = '';
+      module4HintText.textContent = '';
       drawModule4();
       
     }
@@ -1549,9 +1559,15 @@ draw3();
         module4CheckResult.style.color = '#e06c75';
         return;
       }
+      module4HintText.textContent = ''; // Clear the hint text after checking
     }
-    const module4CheckButton = document.getElementById('module4Check');
     module4CheckButton.addEventListener('click', checkModule4Guess);
+
+    function showModule4Hint() {
+      module4HintText.textContent = 'Hint: The time constant τ is the time it takes for the sensor output to reach approximately 63.2% of its final value after a step input.';
+    }
+    module4HintButton.addEventListener('click', showModule4Hint);
+
     </script>
 
 </body>
