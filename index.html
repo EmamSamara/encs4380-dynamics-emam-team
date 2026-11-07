@@ -1461,12 +1461,16 @@ draw3();
   const module4InputTau = document.getElementById('module4TauGuess');
   const module4CheckResult = document.getElementById('module4Result');
   const module4PlotElement = document.getElementById('module4Plot');
-  function drawModule4(){
+  function drawModule4(guessedTau = null){
     const module4Time = [];
     const module4Output = [];
+    const module4GuessOutput = [];
     for(let i = 0; i <= 300; i++) {
       const ti = i / 10;
       module4Time.push(ti);
+      if (guessedTau !== null){
+        module4GuessOutput.push(1 - Math.exp(-ti / guessedTau));
+      }
       module4Output.push(1 - Math.exp(-ti / module4TrueTau));
       }
       const module4Trace = {
@@ -1476,6 +1480,16 @@ draw3();
         name: 'Unknown Sensor',
         line: { color: '#61afef', width: 3 }
       };
+      const module4Traces = [module4Trace];
+      if (guessedTau !== null){ // insert the guessed trace only if a guess has been made
+        module4Traces.push({
+          x: module4Time,
+          y: module4GuessOutput,
+          mode: 'lines',
+          name: 'Your Guess',
+          line: { color: '#e5c07b', width: 3, dash: 'dash' }
+        });
+      }
       const module4Layout = {
         paper_bgcolor: '#1e1e1e',
         plot_bgcolor: '#1e1e1e',
@@ -1485,7 +1499,7 @@ draw3();
         yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
         margin: { t: 30, b: 40, l: 50, r: 20 }
       };
-      Plotly.react(module4PlotElement, [module4Trace], module4Layout, {responsive: true});
+      Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
     }
 
     function newModule4Sensor(){
@@ -1511,6 +1525,8 @@ draw3();
           module4CheckResult.textContent = 'Outside the 10% tolerance.';
           module4CheckResult.style.color = '#e06c75';
         }
+        module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeError * 100).toFixed(1) + '%.';
+        drawModule4(guessedTau);
       }
       else
       {
