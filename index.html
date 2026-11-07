@@ -1454,13 +1454,19 @@ draw3();
   <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">Check Guess</button> 
   <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px; margin: 4px; transition: background-color 0.2s;">New Sensor</button>
   <div id="module4Result" style="margin-top: 12px;"></div>
+  <div id ="module4Score" style="margin-top: 12px;"></div>
 </div>
 
 <script>
   let module4TrueTau = 4;
+  let module4RoundScored = false;
+  let module4RoundsPlayed = 0;
+  let module4TotalScore = 0;
   const module4InputTau = document.getElementById('module4TauGuess');
   const module4CheckResult = document.getElementById('module4Result');
   const module4PlotElement = document.getElementById('module4Plot');
+  const module4ScoreElement = document.getElementById('module4Score');
+  module4ScoreElement.textContent = 'Score: 0 / 0';
   function drawModule4(guessedTau = null){
     const module4Time = [];
     const module4Output = [];
@@ -1468,7 +1474,7 @@ draw3();
     for(let i = 0; i <= 300; i++) {
       const ti = i / 10;
       module4Time.push(ti);
-      if (guessedTau !== null){
+      if (guessedTau !== null){ // only calculate the guessed output if a guess has been made
         module4GuessOutput.push(1 - Math.exp(-ti / guessedTau));
       }
       module4Output.push(1 - Math.exp(-ti / module4TrueTau));
@@ -1504,9 +1510,11 @@ draw3();
 
     function newModule4Sensor(){
       module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+      module4RoundScored = false;
       module4InputTau.value = '';
       module4CheckResult.textContent = '';
       drawModule4();
+      
     }
 
     const module4NewSensorButton = document.getElementById('module4NewSensor');
@@ -1514,17 +1522,24 @@ draw3();
     newModule4Sensor(); // Draw the initial sensor
 
     function checkModule4Guess() {  // Function to check the user's guess value
-      const guessedTau = Number(module4InputTau.value);
+    if (module4RoundScored === true) { // prevent scoring multiple times for the same round
+        return;
+      }  
+    const guessedTau = Number(module4InputTau.value);
       if(Number.isFinite(guessedTau) && guessedTau > 0){
         const relativeError = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
-        if (relativeError <= 0.1 || relativeError <= 0.1 + 1e-12) {
+        module4RoundsPlayed++;
+        if (relativeError <= 0.1 + 1e-12) {
           module4CheckResult.textContent = 'Within 10% -> full marks!';
           module4CheckResult.style.color = '#98c379';
+          module4TotalScore++;
         }
         else{
           module4CheckResult.textContent = 'Outside the 10% tolerance.';
           module4CheckResult.style.color = '#e06c75';
         }
+        module4RoundScored = true;
+        module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
         module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeError * 100).toFixed(1) + '%.';
         drawModule4(guessedTau);
       }
