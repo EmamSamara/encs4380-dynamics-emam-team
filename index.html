@@ -1490,7 +1490,10 @@ draw3();
       module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
       drawModule4();
     }
-    newModule4Sensor();
+
+    const module4NewSensorButton = document.getElementById('module4NewSensor');
+    module4NewSensorButton.addEventListener('click', newModule4Sensor);
+    
     </script>
 
 </body>
