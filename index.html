@@ -1448,22 +1448,27 @@ draw3();
 <!-- --- Module 4 --- -->
 <hr style="margin: 40px 0; border: 1px solid #333;">
 <h1 style="color: #ffffff;">Module 4: Guess the Sensor</h1>
+<label for="module4SensorSelect" style="color: #e0e0e0; display: block; margin-bottom: 8px;">Select Sensor Type:</label>
+<select id="module4SensorSelect" style="font-weight: bold; font-size:16px; background-color: #61afef; color: #121212; padding:10px; border: 1px solid #444; border-radius: 4px; margin-bottom: 16px;">
+  <option value="firstOrder">First-Order Sensor</option>
+  <option value="secondOrder">Second-Order Sensor</option>
+</select>
 <p style="color: #b0b0b0;">Observe the response and estimate the sensor parameters.</p>
 <div id="module4Plot" style="background-color: #1e1e1e; height: 350px; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); border: 1px solid #333;"></div>
 
 <div style="background: #1e1e1e; padding: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
   <p style="color:#e0e0e0; margin: 0 0 16px;"> Estimate time constant τ (seconds) and gain K:</p>
-  <div style="display: flex; flex-wrap: wrap; gap: 16px;"></div>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px;">
     <div style="flex: 1 1 200px;">
       <label for="module4TauGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">τ: </label>
-      <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; margin: 4px">
+      <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
     </div>
     <div style="flex: 1 1 200px;">
       <label for="module4KGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">K: </label>
-      <input id="module4KGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; margin: 4px">
+      <input id="module4KGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
     </div>
   </div>
-  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;"></div>
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;">
     <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Check Guess</button>
     <button id="module4HintButton" type="button" style="font-weight: bold; background-color: #130f1a; color: #d8c4fa; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Hint</button> 
     <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #2d2929; color: #e0e0e0; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">New Sensor</button>
@@ -1489,6 +1494,10 @@ draw3();
   const module4HintText = document.getElementById('module4HintText');
   const module4InputK = document.getElementById('module4KGuess');
   let module4Noise = [];
+  const module4SensorSelect = document.getElementById('module4SensorSelect');
+
+  let module4TrueZeta = 0.5; // Default damping ratio for second-order sensor
+  let module4TrueWn = 2; // Default natural frequency for second-order sensor
 
   function drawModule4(guessedTau = null, guessedK = null) {
     const module4Time = [];
@@ -1498,63 +1507,82 @@ draw3();
     for(let i = 0; i <= 300; i++) {
       const ti = i / 10;
       module4Time.push(ti);
+    }
+    let sensorType = module4SensorSelect.value;
+    let module4Seci=ondOrderOutput = [];
+    if (sensorType === 'secondOrder') {
+      stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
+    }
+    for (let i = 0; i < module4Time.length; i++){
+      const ti = module4Time[i];
       if (guessedTau !== null && guessedK !== null){ // only calculate the guessed output if a guess has been added
         module4GuessOutput.push(guessedK * (1 - Math.exp(-ti / guessedTau)));
       }
       const trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
       module4Output.push(trueOutput);
       module4MeasuredOutput.push(trueOutput + module4Noise[i]);
-      }
-      const module4Trace = {
-        x: module4Time,
-        y: module4MeasuredOutput,
-        mode: 'lines',
-        name: 'Unknown Sensor',
-        line: { color: '#61afef', width: 3 }
-      };
-      const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
-      if (guessedTau !== null && guessedK !== null){ // insert the guessed and the true traces if a guess has been made
-        module4Traces.push({
-          x: module4Time,
-          y: module4GuessOutput,
-          mode: 'lines',
-          name: 'Your Guess',
-          line: { color: '#e5c07b', width: 3, dash: 'dash' }
-        },
-        {
-          x: module4Time,
-          y: module4Output,
-          mode: 'lines',
-          name: 'True Response',
-          line: { color: '#98c379', width: 2}
-        });
-      }
-      const module4Layout = {
-        paper_bgcolor: '#1e1e1e',
-        plot_bgcolor: '#1e1e1e',
-        font: { color: '#e0e0e0' },
-        title: { text: 'Unknown Sensor Response', font: { size: 14 } },
-        xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-        yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
-        margin: { t: 30, b: 40, l: 50, r: 20 }
-      };
-      Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
     }
+    const module4Trace = {
+      x: module4Time,
+      y: module4MeasuredOutput,
+      mode: 'lines',
+      name: 'Unknown Sensor',
+      line: { color: '#61afef', width: 3 }
+    };
+    const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
+    if (guessedTau !== null && guessedK !== null){ // insert the guessed and the true traces if a guess has been made
+      module4Traces.push({
+        x: module4Time,
+        y: module4GuessOutput,
+        mode: 'lines',
+        name: 'Your Guess',
+        line: { color: '#e5c07b', width: 3, dash: 'dash' }
+      },
+      {
+        x: module4Time,
+        y: module4Output,
+        mode: 'lines',
+        name: 'True Response',
+        line: { color: '#98c379', width: 2}
+      });
+    }
+    const module4Layout = {
+      paper_bgcolor: '#1e1e1e',
+      plot_bgcolor: '#1e1e1e',
+      font: { color: '#e0e0e0' },
+      title: { text: 'Unknown Sensor Response', font: { size: 14 } },
+      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
+      margin: { t: 30, b: 40, l: 50, r: 20 }
+    };
+    Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
+  }
     // Draw the new sensor wave when click on the "New Sensor" button
     function newModule4Sensor(){
-      module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+      const sensorType = module4SensorSelect.value;
+      // console.log('Selected sensor type:', sensorType);
+      if (sensorType === 'firstOrder'){
+        module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+        module4TrueK = 0.5 + (1.5 * Math.random()); // Random K between 0.5 and 2
+      }
+      else if (sensorType === 'secondOrder'){
+        module4TrueZeta = 0.2 + (0.5 * Math.random()); // Random ζ between 0.2 and 0.7
+        module4TrueWn = 1 + (3 * Math.random()); // Random ωn between 1 and 4 rad/s
+        module4TrueK = 1; // For simplicity, we can keep K = 1 for second-order sensors
+      }
       module4RoundScored = false;
       module4InputTau.value = '';
       module4InputK.value = '';
       module4CheckResult.textContent = '';
       module4HintText.textContent = '';
       module4Noise = [];
-      module4TrueK = 0.5 + (1.5 * Math.random()); // Random K between 0.5 and 2
       for(let i = 0; i <= 300; i++) {
         const noise = module4TrueK * (Math.random() - 0.5) * 0.02; // Random noise between -1% and +1% of K
         module4Noise.push(noise); // Random noise between -0.01 and 0.01 of K
       }
       drawModule4();
+      
+      
     }
 
     const module4NewSensorButton = document.getElementById('module4NewSensor');
