@@ -6,6 +6,19 @@
 <title>Dynamic Characteristics Toolkit - Module 1</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 
+
+<style>
+  #module4Check:hover{
+    background-color: #ccddec !important;
+  }
+   #module4NewSensor:hover{
+    background-color: #abaaaa !important;
+  }
+  #module4HintButton:hover{
+    background-color: #ab9fc4 !important;
+  }
+</style>
+
 </head>
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
 
@@ -1689,7 +1702,332 @@ validate3();
 draw3();
 </script>
 
+<!-- --- Module 4 --- -->
+<hr style="margin: 40px 0; border: 1px solid #333;">
+<h1 style="color: #ffffff;">Module 4: Guess the Sensor</h1>
+<label for="module4SensorSelect" style="color: #e0e0e0; display: block; margin-bottom: 8px;">Select Sensor Type:</label>
+<select id="module4SensorSelect" style="font-weight: bold; font-size:16px; background-color: #61afef; color: #121212; padding:10px; border: 1px solid #444; border-radius: 4px; margin-bottom: 16px;">
+  <option value="firstOrder">First-Order Sensor</option>
+  <option value="secondOrder">Second-Order Sensor</option>
+  <option value="firstOrderSine">First-Order Sensor — Sine Input</option>
+</select>
+<p style="color: #b0b0b0;">Observe the response and estimate the sensor parameters.</p>
+<div id="module4Plot" style="background-color: #1e1e1e; height: 350px; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); border: 1px solid #333;"></div>
+
+<div style="background: #1e1e1e; padding: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
+  <p style="color:#e0e0e0; margin: 0 0 16px;"> Estimate the sensor parameters:</p>
+  
+  <div id="module4FirstOrderInputs" style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <div style="flex: 1 1 200px;">
+      <label for="module4TauGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Time constant τ (second): </label>
+      <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+    <div style="flex: 1 1 200px;">
+      <label for="module4KGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Gain K: </label>
+      <input id="module4KGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+  </div>
+
+  <div id="module4SecondOrderInputs" style="display: none; flex-wrap: wrap; gap: 16px;">
+    <div style="flex: 1 1 200px;">
+      <label for="module4ZetaGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Damping ratio ζ: </label>
+      <input id="module4ZetaGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+    <div style="flex: 1 1 200px;">
+      <label for="module4WnGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Natural angular frequency ωn (rad/s): </label>
+      <input id="module4WnGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;">
+    <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Check Guess</button>
+    <button id="module4HintButton" type="button" style="font-weight: bold; background-color: #130f1a; color: #d8c4fa; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Hint</button> 
+    <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #2d2929; color: #e0e0e0; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">New Sensor</button>
+  </div>
+
+  <div id="module4HintText" style="margin-top: 12px; color:#b0b0b0"></div>
+  <div id="module4Result" style="margin-top: 12px;"></div>
+  <div id ="module4Score" style="margin-top: 12px;"></div>
+</div>
+
+<script>
+  let module4TrueTau = 4;
+  let module4RoundScored = false;
+  let module4RoundsPlayed = 0;
+  let module4TotalScore = 0;
+  let module4TrueK = 1; // Assuming K is initially 1 for simplicity
+  const module4InputTau = document.getElementById('module4TauGuess');
+  const module4CheckResult = document.getElementById('module4Result');
+  const module4PlotElement = document.getElementById('module4Plot');
+  const module4ScoreElement = document.getElementById('module4Score');
+  module4ScoreElement.textContent = 'Score: 0 / 0';
+  const module4CheckButton = document.getElementById('module4Check');
+  const module4HintButton = document.getElementById('module4HintButton');
+  const module4HintText = document.getElementById('module4HintText');
+  const module4InputK = document.getElementById('module4KGuess');
+  let module4Noise = [];
+  const module4SensorSelect = document.getElementById('module4SensorSelect');
+
+  let module4TrueZeta = 0.5; // Default damping ratio for second-order sensor
+  let module4TrueWn = 2; // Default natural frequency for second-order sensor
+  const module4FirstOrderInputs = document.getElementById('module4FirstOrderInputs');
+  const module4SecondOrderInputs = document.getElementById('module4SecondOrderInputs');
+  const module4InputZeta = document.getElementById('module4ZetaGuess');
+  const module4InputWn = document.getElementById('module4WnGuess');
+
+  let module4Omega = 1;
+
+    function drawModule4(guess1 = null, guess2 = null) {
+      const module4Time = [];
+      const module4Output = [];
+      const module4GuessOutput = [];
+      const module4MeasuredOutput = [];
+      let module4SecondOrderGuessOutput = [];
+      for(let i = 0; i <= 300; i++) {
+        const ti = i / 10;
+        module4Time.push(ti);
+      }
+      const sensorType = module4SensorSelect.value;
+      let module4SecondOrderOutput = [];
+      if (sensorType === 'secondOrder') { 
+        module4SecondOrderOutput = stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
+      }
+      if (sensorType === 'secondOrder' && guess1 !== null && guess2 !== null) {
+        module4SecondOrderGuessOutput = stepResponse(module4Time, guess1, guess2, 1, 1);
+      }
+
+      const module4SineAmplitude = module4TrueK / Math.sqrt(1 + Math.pow(module4Omega * module4TrueTau, 2));
+      const module4SinePhase = Math.atan(-module4Omega * module4TrueTau);
+      const module4SineInput = [];
+      let module4SineFirstOrderGuessAmplitude;
+      let module4SineFirstOrderGuessPhase;
+      if (sensorType === 'firstOrderSine' && guess1 !== null && guess2 !== null) {
+        module4SineFirstOrderGuessAmplitude = guess2 / Math.sqrt(1 + Math.pow(module4Omega * guess1, 2));
+        module4SineFirstOrderGuessPhase = Math.atan(-module4Omega * guess1);
+      }
+
+      for (let i = 0; i < module4Time.length; i++){
+        const ti = module4Time[i];
+        if (guess1 !== null && guess2 !== null){ // only calculate the guessed output if a guess has been added
+          if (sensorType === 'firstOrder'){
+            module4GuessOutput.push(guess2 * (1 - Math.exp(-ti / guess1)));
+          }
+          else if (sensorType === 'secondOrder'){
+            module4GuessOutput.push(module4SecondOrderGuessOutput[i]);
+          }
+          else if (sensorType === 'firstOrderSine') {
+            module4GuessOutput.push(module4SineFirstOrderGuessAmplitude * Math.sin(module4Omega * ti + module4SineFirstOrderGuessPhase));
+          }
+        }
+        let trueOutput;
+        if (sensorType === 'secondOrder'){
+          trueOutput = module4SecondOrderOutput[i];
+        }
+        else if (sensorType === 'firstOrderSine'){
+          trueOutput = module4SineAmplitude * Math.sin(module4Omega * ti + module4SinePhase);
+          module4SineInput.push(Math.sin(module4Omega * ti));
+        }
+        else{
+          trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
+        }
+        module4Output.push(trueOutput);
+        module4MeasuredOutput.push(trueOutput + module4Noise[i]);
+      }
+      const module4Trace = {
+        x: module4Time,
+        y: module4MeasuredOutput,
+        mode: 'lines',
+        name: 'Unknown Sensor',
+        line: { color: '#61afef', width: 3 }
+      };
+      const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
+      if(sensorType === 'firstOrderSine'){
+        module4Traces.push({
+          x: module4Time,
+          y: module4SineInput,
+          mode: 'lines',
+          name: 'Input x(t)',
+          line: { color: '#b0b0b0', width: 2, dash: 'dot' }
+        });
+      }
+      if (guess1 !== null && guess2 !== null){ // insert the guessed and the true traces if a guess has been made
+        module4Traces.push({
+          x: module4Time,
+          y: module4GuessOutput,
+          mode: 'lines',
+          name: 'Your Guess',
+          line: { color: '#e5c07b', width: 3, dash: 'dash' }
+        },
+        {
+          x: module4Time,
+          y: module4Output,
+          mode: 'lines',
+          name: 'True Response',
+          line: { color: '#98c379', width: 2}
+        });
+      }
+      const module4PlotTitle = sensorType === 'firstOrderSine' ? `Steady-State Sine Response — ω = ${module4Omega.toFixed(2)} rad/s` : 'Unknown Sensor Response';
+      const module4Layout = {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font: { color: '#e0e0e0' },
+        title: { text: module4PlotTitle, font: { size: 14 } },
+        xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        margin: { t: 30, b: 40, l: 50, r: 20 }
+      };
+      Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
+    }
+
+    // Draw the new sensor wave when click on the "New Sensor" button
+    function newModule4Sensor(){
+      const sensorType = module4SensorSelect.value;
+      // console.log('Selected sensor type:', sensorType);
+      if (sensorType === 'firstOrder' || sensorType === 'firstOrderSine'){
+        module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+        module4TrueK = 0.5 + (1.5 * Math.random()); // Random K between 0.5 and 2
+        module4SecondOrderInputs.style.display = 'none';
+        module4FirstOrderInputs.style.display = 'flex';
+      }
+      else if (sensorType === 'secondOrder'){
+        module4TrueZeta = 0.2 + (0.5 * Math.random()); // Random ζ between 0.2 and 0.7
+        module4TrueWn = 1 + (3 * Math.random()); // Random ωn between 1 and 4 rad/s
+        module4TrueK = 1; // For simplicity, we can keep K = 1 for second-order sensors
+        module4SecondOrderInputs.style.display = 'flex';
+        module4FirstOrderInputs.style.display = 'none';
+      }
+      module4RoundScored = false;
+      module4InputTau.value = '';
+      module4InputK.value = '';
+      module4InputZeta.value = '';
+      module4InputWn.value = '';
+      module4CheckResult.textContent = '';
+      module4HintText.textContent = '';
+      module4Noise = [];
+      for(let i = 0; i <= 300; i++) {
+        const noise = module4TrueK * (Math.random() - 0.5) * 0.02; // Random noise between -1% and +1% of K
+        module4Noise.push(noise); // Random noise between -0.01 and 0.01 of K
+      }
+      drawModule4();
+    }
+
+    const module4NewSensorButton = document.getElementById('module4NewSensor');
+    module4NewSensorButton.addEventListener('click', newModule4Sensor);
+    newModule4Sensor(); // Draw the initial sensor
+    module4SensorSelect.addEventListener('change', newModule4Sensor); // Redraw when sensor type changes
+
+    function checkModule4Guess() {  // Function to check the user's guess value
+    if (module4RoundScored === true) { // prevent scoring multiple times for the same round
+        return;
+      }
+    const sensorType = module4SensorSelect.value;
+    if(sensorType === 'firstOrder' || sensorType === 'firstOrderSine'){  
+      const guessedTau = Number(module4InputTau.value);
+      const guessedK = Number(module4InputK.value);
+        if(Number.isFinite(guessedTau) && guessedTau > 0 && Number.isFinite(guessedK) && guessedK > 0) {
+          const relativeErrorTau = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
+          const relativeErrorK = Math.abs(guessedK - module4TrueK) / module4TrueK;
+          module4RoundsPlayed++;
+          if (relativeErrorTau <= 0.1 + 1e-12 && relativeErrorK <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
+            module4CheckResult.textContent = 'Within 10% -> full marks!';
+            module4CheckResult.style.color = '#98c379';
+            module4TotalScore++;
+          }
+          else if (relativeErrorTau > 0.1 + 1e-12 && relativeErrorK > 0.1 + 1e-12) {
+            module4CheckResult.textContent = 'Outside the 10% of τ & K.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else if (relativeErrorTau > 0.1 + 1e-12){
+            module4CheckResult.textContent = 'Outside the 10% of τ.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else {
+            module4CheckResult.textContent = 'Outside the 10% of K.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          
+          module4RoundScored = true;
+          module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
+          module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeErrorTau * 100).toFixed(1) + '%.';
+          module4CheckResult.textContent += ' | True K = ' + module4TrueK.toFixed(2) + ', your guess = ' + guessedK.toFixed(2) + ', relative error = ' + (relativeErrorK * 100).toFixed(1) + '%.';
+
+          drawModule4(guessedTau, guessedK);
+        }
+        else
+        {
+          module4CheckResult.textContent = 'Please enter a valid positive number for τ & K.';
+          module4CheckResult.style.color = '#e06c75';
+          return;
+        }
+      }
+      else{
+        const guessedZeta = Number(module4InputZeta.value);
+        const guessedWn = Number(module4InputWn.value);
+        if(Number.isFinite(guessedZeta) && guessedZeta > 0 && Number.isFinite(guessedWn) && guessedWn > 0) {
+          const relativeErrorZeta = Math.abs(guessedZeta - module4TrueZeta) / module4TrueZeta;
+          const relativeErrorWn = Math.abs(guessedWn - module4TrueWn) / module4TrueWn;
+          module4RoundsPlayed++;
+          if (relativeErrorZeta <= 0.1 + 1e-12 && relativeErrorWn <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
+            module4CheckResult.textContent = 'Within 10% -> full marks!';
+            module4CheckResult.style.color = '#98c379';
+            module4TotalScore++;
+          }
+          else if (relativeErrorZeta > 0.1 + 1e-12 && relativeErrorWn > 0.1 + 1e-12) {
+            module4CheckResult.textContent = 'Outside the 10% of ζ & ωn.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else if (relativeErrorZeta > 0.1 + 1e-12){
+            module4CheckResult.textContent = 'Outside the 10% of ζ.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else {
+            module4CheckResult.textContent = 'Outside the 10% of ωn.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          
+          module4RoundScored = true;
+          module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
+          module4CheckResult.textContent += ' | True ζ = ' + module4TrueZeta.toFixed(2) + ', your guess = ' + guessedZeta.toFixed(2) + ', relative error = ' + (relativeErrorZeta * 100).toFixed(1) + '%.';
+          module4CheckResult.textContent += ' | True ωn = ' + module4TrueWn.toFixed(2) + ' rad/s, your guess = ' + guessedWn.toFixed(2) + ' rad/s, relative error = ' + (relativeErrorWn * 100).toFixed(1) + '%.';
+
+          drawModule4(guessedZeta, guessedWn);
+        }
+        else
+        {
+          module4CheckResult.textContent = 'Please enter a valid positive number for ζ & ωn.';
+          module4CheckResult.style.color = '#e06c75';
+          return;
+        }
+      }
+      module4HintText.textContent = ''; // Clear the hint text after checking
+    }
+    module4CheckButton.addEventListener('click', checkModule4Guess);
+
+    function showModule4Hint() {
+      const sensorType = module4SensorSelect.value;
+
+      if (sensorType === 'firstOrder') {
+        module4HintText.textContent =
+          'Hint: Estimate K from the final output value (unit step input). ' +
+          'Estimate τ from the time when the output reaches 63.2% of that final value.';
+      } else if (sensorType === 'firstOrderSine') {
+        module4HintText.textContent =
+          'Hint: Measure Δt between an input peak and the following output peak. ' +
+          'Calculate the positive phase lag φ = ω × Δt in radians, then τ = tan(φ) / ω. ' +
+          'Estimate the output amplitude Aout as (maximum − minimum) / 2. ' +
+          'Since the input amplitude is 1, K = Aout × √(1 + (ωτ)²). ' +
+          'Use several cycles to reduce the effect of noise.';
+      } else if (sensorType === 'secondOrder') {
+        module4HintText.textContent =
+          'Hint: Estimate the final value and the first peak. ' +
+          'Calculate Mp = (peak − final) / final as a fraction, not a percentage. ' +
+          'Then ζ = −ln(Mp) / √(π² + ln²(Mp)). ' +
+          'Measure tp, the time of the first peak, then ωn = π / (tp × √(1 − ζ²)).';
+      }
+    }
+    module4HintButton.addEventListener('click', showModule4Hint);
+  </script>
+
 </body>
 
 </html>
-
