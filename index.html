@@ -1881,43 +1881,85 @@ draw3();
     function checkModule4Guess() {  // Function to check the user's guess value
     if (module4RoundScored === true) { // prevent scoring multiple times for the same round
         return;
-      }  
-    const guessedTau = Number(module4InputTau.value);
-    const guessedK = Number(module4InputK.value);
-      if(Number.isFinite(guessedTau) && guessedTau > 0 && Number.isFinite(guessedK) && guessedK > 0) {
-        const relativeErrorTau = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
-        const relativeErrorK = Math.abs(guessedK - module4TrueK) / module4TrueK;
-        module4RoundsPlayed++;
-        if (relativeErrorTau <= 0.1 + 1e-12 && relativeErrorK <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
-          module4CheckResult.textContent = 'Within 10% -> full marks!';
-          module4CheckResult.style.color = '#98c379';
-          module4TotalScore++;
-        }
-        else if (relativeErrorTau > 0.1 + 1e-12 && relativeErrorK > 0.1 + 1e-12) {
-          module4CheckResult.textContent = 'Outside the 10% of τ & K.';
-          module4CheckResult.style.color = '#e06c75';
-        }
-        else if (relativeErrorTau > 0.1 + 1e-12){
-          module4CheckResult.textContent = 'Outside the 10% of τ.';
-          module4CheckResult.style.color = '#e06c75';
-        }
-        else {
-          module4CheckResult.textContent = 'Outside the 10% of K.';
-          module4CheckResult.style.color = '#e06c75';
-        }
-        
-        module4RoundScored = true;
-        module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
-        module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeErrorTau * 100).toFixed(1) + '%.';
-        module4CheckResult.textContent += ' | True K = ' + module4TrueK.toFixed(2) + ', your guess = ' + guessedK.toFixed(2) + ', relative error = ' + (relativeErrorK * 100).toFixed(1) + '%.';
-
-        drawModule4(guessedTau, guessedK);
       }
-      else
-      {
-        module4CheckResult.textContent = 'Please enter a valid positive number for τ & K.';
-        module4CheckResult.style.color = '#e06c75';
-        return;
+    const sensorType = module4SensorSelect.value;
+    if(sensorType === 'firstOrder'){  
+      const guessedTau = Number(module4InputTau.value);
+      const guessedK = Number(module4InputK.value);
+        if(Number.isFinite(guessedTau) && guessedTau > 0 && Number.isFinite(guessedK) && guessedK > 0) {
+          const relativeErrorTau = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
+          const relativeErrorK = Math.abs(guessedK - module4TrueK) / module4TrueK;
+          module4RoundsPlayed++;
+          if (relativeErrorTau <= 0.1 + 1e-12 && relativeErrorK <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
+            module4CheckResult.textContent = 'Within 10% -> full marks!';
+            module4CheckResult.style.color = '#98c379';
+            module4TotalScore++;
+          }
+          else if (relativeErrorTau > 0.1 + 1e-12 && relativeErrorK > 0.1 + 1e-12) {
+            module4CheckResult.textContent = 'Outside the 10% of τ & K.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else if (relativeErrorTau > 0.1 + 1e-12){
+            module4CheckResult.textContent = 'Outside the 10% of τ.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else {
+            module4CheckResult.textContent = 'Outside the 10% of K.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          
+          module4RoundScored = true;
+          module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
+          module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeErrorTau * 100).toFixed(1) + '%.';
+          module4CheckResult.textContent += ' | True K = ' + module4TrueK.toFixed(2) + ', your guess = ' + guessedK.toFixed(2) + ', relative error = ' + (relativeErrorK * 100).toFixed(1) + '%.';
+
+          drawModule4(guessedTau, guessedK);
+        }
+        else
+        {
+          module4CheckResult.textContent = 'Please enter a valid positive number for τ & K.';
+          module4CheckResult.style.color = '#e06c75';
+          return;
+        }
+      }
+      else{
+        const guessedZeta = Number(module4InputZeta.value);
+        const guessedWn = Number(module4InputWn.value);
+        if(Number.isFinite(guessedZeta) && guessedZeta > 0 && Number.isFinite(guessedWn) && guessedWn > 0) {
+          const relativeErrorZeta = Math.abs(guessedZeta - module4TrueZeta) / module4TrueZeta;
+          const relativeErrorWn = Math.abs(guessedWn - module4TrueWn) / module4TrueWn;
+          module4RoundsPlayed++;
+          if (relativeErrorZeta <= 0.1 + 1e-12 && relativeErrorWn <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
+            module4CheckResult.textContent = 'Within 10% -> full marks!';
+            module4CheckResult.style.color = '#98c379';
+            module4TotalScore++;
+          }
+          else if (relativeErrorZeta > 0.1 + 1e-12 && relativeErrorWn > 0.1 + 1e-12) {
+            module4CheckResult.textContent = 'Outside the 10% of ζ & ωn.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else if (relativeErrorZeta > 0.1 + 1e-12){
+            module4CheckResult.textContent = 'Outside the 10% of ζ.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else {
+            module4CheckResult.textContent = 'Outside the 10% of ωn.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          
+          module4RoundScored = true;
+          module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
+          module4CheckResult.textContent += ' | True ζ = ' + module4TrueZeta.toFixed(2) + ', your guess = ' + guessedZeta.toFixed(2) + ', relative error = ' + (relativeErrorZeta * 100).toFixed(1) + '%.';
+          module4CheckResult.textContent += ' | True ωn = ' + module4TrueWn.toFixed(2) + ' rad/s, your guess = ' + guessedWn.toFixed(2) + ' rad/s, relative error = ' + (relativeErrorWn * 100).toFixed(1) + '%.';
+
+          drawModule4(guessedZeta, guessedWn);
+        }
+        else
+        {
+          module4CheckResult.textContent = 'Please enter a valid positive number for ζ & ωn.';
+          module4CheckResult.style.color = '#e06c75';
+          return;
+        }
       }
       module4HintText.textContent = ''; // Clear the hint text after checking
     }
@@ -1927,6 +1969,8 @@ draw3();
       module4HintText.textContent = 'Hint: The time constant τ is the time it takes for the sensor output to reach approximately 63.2% of its final value after a step input.';
     }
     module4HintButton.addEventListener('click', showModule4Hint);
+
+    
 
     </script>
 
