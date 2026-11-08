@@ -1975,7 +1975,14 @@ draw3();
     module4CheckButton.addEventListener('click', checkModule4Guess);
 
     function showModule4Hint() {
-      module4HintText.textContent = 'Hint: The time constant τ is the time it takes for the sensor output to reach approximately 63.2% of its final value after a step input.';
+      const sensorType = module4SensorSelect.value;
+      if (sensorType === 'firstOrder') {
+      module4HintText.textContent = 'Hint: The time constant τ is the time it takes for the sensor output to reach approximately 63.2% of its final value after a step input, and estimate K from the final output value.';
+      } 
+      else if (sensorType === 'secondOrder') {
+        module4HintText.textContent = 'Hint: The damping ratio ζ affects the overshoot and oscillations, while the natural frequency ωn affects how quickly the system responds. Try to estimate these based on the response curve.';
+        module4HintText.textContent += 'Estimate Mp = (peak − final) / final, and tp = time of the first peak. Then ζ = −ln(Mp) / √(π² + ln²(Mp)), and ωn = π / (tp × √(1 − ζ²)). Use Mp as a fraction, not a percentage.'
+      }
     }
     module4HintButton.addEventListener('click', showModule4Hint);
 
