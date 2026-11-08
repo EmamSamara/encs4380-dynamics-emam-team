@@ -1765,17 +1765,24 @@ draw3();
       const ti = i / 10;
       module4Time.push(ti);
     }
-    let sensorType = module4SensorSelect.value;
-    let module4Seci=ondOrderOutput = [];
-    if (sensorType === 'secondOrder') {
-      stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
+    const sensorType = module4SensorSelect.value;
+    let module4SecondOrderOutput = [];
+    if (sensorType === 'secondOrder') { 
+      module4SecondOrderOutput = stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
     }
+
     for (let i = 0; i < module4Time.length; i++){
       const ti = module4Time[i];
       if (guessedTau !== null && guessedK !== null){ // only calculate the guessed output if a guess has been added
         module4GuessOutput.push(guessedK * (1 - Math.exp(-ti / guessedTau)));
       }
-      const trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
+      let trueOutput;
+      if (sensorType === 'secondOrder'){
+        trueOutput = module4SecondOrderOutput[i];
+      }
+      else{
+        trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
+      }
       module4Output.push(trueOutput);
       module4MeasuredOutput.push(trueOutput + module4Noise[i]);
     }
