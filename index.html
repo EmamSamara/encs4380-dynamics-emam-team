@@ -1709,6 +1709,7 @@ draw3();
 <select id="module4SensorSelect" style="font-weight: bold; font-size:16px; background-color: #61afef; color: #121212; padding:10px; border: 1px solid #444; border-radius: 4px; margin-bottom: 16px;">
   <option value="firstOrder">First-Order Sensor</option>
   <option value="secondOrder">Second-Order Sensor</option>
+  <option value="firstOrderSine">First-Order Sensor — Sine Input</option>
 </select>
 <p style="color: #b0b0b0;">Observe the response and estimate the sensor parameters.</p>
 <div id="module4Plot" style="background-color: #1e1e1e; height: 350px; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); border: 1px solid #333;"></div>
@@ -1774,85 +1775,115 @@ draw3();
   const module4InputZeta = document.getElementById('module4ZetaGuess');
   const module4InputWn = document.getElementById('module4WnGuess');
 
-  function drawModule4(guess1 = null, guess2 = null) {
-    const module4Time = [];
-    const module4Output = [];
-    const module4GuessOutput = [];
-    const module4MeasuredOutput = [];
-    let module4SecondOrderGuessOutput = [];
-    for(let i = 0; i <= 300; i++) {
-      const ti = i / 10;
-      module4Time.push(ti);
-    }
-    const sensorType = module4SensorSelect.value;
-    let module4SecondOrderOutput = [];
-    if (sensorType === 'secondOrder') { 
-      module4SecondOrderOutput = stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
-    }
-    if (sensorType === 'secondOrder' && guess1 !== null && guess2 !== null) {
-      module4SecondOrderGuessOutput = stepResponse(module4Time, guess1, guess2, 1, 1);
+  let module4Omega = 1;
+
+    function drawModule4(guess1 = null, guess2 = null) {
+      const module4Time = [];
+      const module4Output = [];
+      const module4GuessOutput = [];
+      const module4MeasuredOutput = [];
+      let module4SecondOrderGuessOutput = [];
+      for(let i = 0; i <= 300; i++) {
+        const ti = i / 10;
+        module4Time.push(ti);
+      }
+      const sensorType = module4SensorSelect.value;
+      let module4SecondOrderOutput = [];
+      if (sensorType === 'secondOrder') { 
+        module4SecondOrderOutput = stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
+      }
+      if (sensorType === 'secondOrder' && guess1 !== null && guess2 !== null) {
+        module4SecondOrderGuessOutput = stepResponse(module4Time, guess1, guess2, 1, 1);
+      }
+
+      const module4SineAmplitude = module4TrueK / Math.sqrt(1 + Math.pow(module4Omega * module4TrueTau, 2));
+      const module4SinePhase = Math.atan(-module4Omega * module4TrueTau);
+      const module4SineInput = [];
+      let module4SineFirstOrderGuessAmplitude;
+      let module4SineFirstOrderGuessPhase;
+      if (sensorType === 'firstOrderSine' && guess1 !== null && guess2 !== null) {
+        module4SineFirstOrderGuessAmplitude = guess2 / Math.sqrt(1 + Math.pow(module4Omega * guess1, 2));
+        module4SineFirstOrderGuessPhase = Math.atan(-module4Omega * guess1);
+      }
+
+      for (let i = 0; i < module4Time.length; i++){
+        const ti = module4Time[i];
+        if (guess1 !== null && guess2 !== null){ // only calculate the guessed output if a guess has been added
+          if (sensorType === 'firstOrder'){
+            module4GuessOutput.push(guess2 * (1 - Math.exp(-ti / guess1)));
+          }
+          else if (sensorType === 'secondOrder'){
+            module4GuessOutput.push(module4SecondOrderGuessOutput[i]);
+          }
+          else if (sensorType === 'firstOrderSine') {
+            module4GuessOutput.push(module4SineFirstOrderGuessAmplitude * Math.sin(module4Omega * ti + module4SineFirstOrderGuessPhase));
+          }
+        }
+        let trueOutput;
+        if (sensorType === 'secondOrder'){
+          trueOutput = module4SecondOrderOutput[i];
+        }
+        else if (sensorType === 'firstOrderSine'){
+          trueOutput = module4SineAmplitude * Math.sin(module4Omega * ti + module4SinePhase);
+          module4SineInput.push(Math.sin(module4Omega * ti));
+        }
+        else{
+          trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
+        }
+        module4Output.push(trueOutput);
+        module4MeasuredOutput.push(trueOutput + module4Noise[i]);
+      }
+      const module4Trace = {
+        x: module4Time,
+        y: module4MeasuredOutput,
+        mode: 'lines',
+        name: 'Unknown Sensor',
+        line: { color: '#61afef', width: 3 }
+      };
+      const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
+      if(sensorType === 'firstOrderSine'){
+        module4Traces.push({
+          x: module4Time,
+          y: module4SineInput,
+          mode: 'lines',
+          name: 'Input x(t)',
+          line: { color: '#b0b0b0', width: 2, dash: 'dot' }
+        });
+      }
+      if (guess1 !== null && guess2 !== null){ // insert the guessed and the true traces if a guess has been made
+        module4Traces.push({
+          x: module4Time,
+          y: module4GuessOutput,
+          mode: 'lines',
+          name: 'Your Guess',
+          line: { color: '#e5c07b', width: 3, dash: 'dash' }
+        },
+        {
+          x: module4Time,
+          y: module4Output,
+          mode: 'lines',
+          name: 'True Response',
+          line: { color: '#98c379', width: 2}
+        });
+      }
+      const module4PlotTitle = sensorType === 'firstOrderSine' ? `Steady-State Sine Response — ω = ${module4Omega.toFixed(2)} rad/s` : 'Unknown Sensor Response';
+      const module4Layout = {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font: { color: '#e0e0e0' },
+        title: { text: module4PlotTitle, font: { size: 14 } },
+        xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        margin: { t: 30, b: 40, l: 50, r: 20 }
+      };
+      Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
     }
 
-    for (let i = 0; i < module4Time.length; i++){
-      const ti = module4Time[i];
-      if (guess1 !== null && guess2 !== null){ // only calculate the guessed output if a guess has been added
-        if (sensorType === 'firstOrder'){
-          module4GuessOutput.push(guess2 * (1 - Math.exp(-ti / guess1)));
-        }
-        else if (sensorType === 'secondOrder'){
-          module4GuessOutput.push(module4SecondOrderGuessOutput[i]);
-        }
-      }
-      let trueOutput;
-      if (sensorType === 'secondOrder'){
-        trueOutput = module4SecondOrderOutput[i];
-      }
-      else{
-        trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
-      }
-      module4Output.push(trueOutput);
-      module4MeasuredOutput.push(trueOutput + module4Noise[i]);
-    }
-    const module4Trace = {
-      x: module4Time,
-      y: module4MeasuredOutput,
-      mode: 'lines',
-      name: 'Unknown Sensor',
-      line: { color: '#61afef', width: 3 }
-    };
-    const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
-    if (guess1 !== null && guess2 !== null){ // insert the guessed and the true traces if a guess has been made
-      module4Traces.push({
-        x: module4Time,
-        y: module4GuessOutput,
-        mode: 'lines',
-        name: 'Your Guess',
-        line: { color: '#e5c07b', width: 3, dash: 'dash' }
-      },
-      {
-        x: module4Time,
-        y: module4Output,
-        mode: 'lines',
-        name: 'True Response',
-        line: { color: '#98c379', width: 2}
-      });
-    }
-    const module4Layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Unknown Sensor Response', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
-    };
-    Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
-  }
     // Draw the new sensor wave when click on the "New Sensor" button
     function newModule4Sensor(){
       const sensorType = module4SensorSelect.value;
       // console.log('Selected sensor type:', sensorType);
-      if (sensorType === 'firstOrder'){
+      if (sensorType === 'firstOrder' || sensorType === 'firstOrderSine'){
         module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
         module4TrueK = 0.5 + (1.5 * Math.random()); // Random K between 0.5 and 2
         module4SecondOrderInputs.style.display = 'none';
@@ -1878,8 +1909,6 @@ draw3();
         module4Noise.push(noise); // Random noise between -0.01 and 0.01 of K
       }
       drawModule4();
-      
-      
     }
 
     const module4NewSensorButton = document.getElementById('module4NewSensor');
@@ -1892,7 +1921,7 @@ draw3();
         return;
       }
     const sensorType = module4SensorSelect.value;
-    if(sensorType === 'firstOrder'){  
+    if(sensorType === 'firstOrder' || sensorType === 'firstOrderSine'){  
       const guessedTau = Number(module4InputTau.value);
       const guessedK = Number(module4InputK.value);
         if(Number.isFinite(guessedTau) && guessedTau > 0 && Number.isFinite(guessedK) && guessedK > 0) {
@@ -1976,7 +2005,7 @@ draw3();
 
     function showModule4Hint() {
       const sensorType = module4SensorSelect.value;
-      if (sensorType === 'firstOrder') {
+      if (sensorType === 'firstOrder' || sensorType === 'firstOrderSine') {
       module4HintText.textContent = 'Hint: The time constant τ is the time it takes for the sensor output to reach approximately 63.2% of its final value after a step input, and estimate K from the final output value.';
       } 
       else if (sensorType === 'secondOrder') {
@@ -1985,10 +2014,7 @@ draw3();
       }
     }
     module4HintButton.addEventListener('click', showModule4Hint);
-
-    
-
-    </script>
+  </script>
 
 </body>
 
