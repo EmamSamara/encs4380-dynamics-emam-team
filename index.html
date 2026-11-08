@@ -1774,11 +1774,12 @@ draw3();
   const module4InputZeta = document.getElementById('module4ZetaGuess');
   const module4InputWn = document.getElementById('module4WnGuess');
 
-  function drawModule4(guessedTau = null, guessedK = null) {
+  function drawModule4(guess1 = null, guess2 = null) {
     const module4Time = [];
     const module4Output = [];
     const module4GuessOutput = [];
     const module4MeasuredOutput = [];
+    let module4SecondOrderGuessOutput = [];
     for(let i = 0; i <= 300; i++) {
       const ti = i / 10;
       module4Time.push(ti);
@@ -1788,11 +1789,19 @@ draw3();
     if (sensorType === 'secondOrder') { 
       module4SecondOrderOutput = stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
     }
+    if (sensorType === 'secondOrder' && guess1 !== null && guess2 !== null) {
+      module4SecondOrderGuessOutput = stepResponse(module4Time, guess1, guess2, 1, 1);
+    }
 
     for (let i = 0; i < module4Time.length; i++){
       const ti = module4Time[i];
-      if (guessedTau !== null && guessedK !== null){ // only calculate the guessed output if a guess has been added
-        module4GuessOutput.push(guessedK * (1 - Math.exp(-ti / guessedTau)));
+      if (guess1 !== null && guess2 !== null){ // only calculate the guessed output if a guess has been added
+        if (sensorType === 'firstOrder'){
+          module4GuessOutput.push(guess2 * (1 - Math.exp(-ti / guess1)));
+        }
+        else if (sensorType === 'secondOrder'){
+          module4GuessOutput.push(module4SecondOrderGuessOutput[i]);
+        }
       }
       let trueOutput;
       if (sensorType === 'secondOrder'){
@@ -1812,7 +1821,7 @@ draw3();
       line: { color: '#61afef', width: 3 }
     };
     const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
-    if (guessedTau !== null && guessedK !== null){ // insert the guessed and the true traces if a guess has been made
+    if (guess1 !== null && guess2 !== null){ // insert the guessed and the true traces if a guess has been made
       module4Traces.push({
         x: module4Time,
         y: module4GuessOutput,
