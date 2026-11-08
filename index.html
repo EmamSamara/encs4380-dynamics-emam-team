@@ -23,40 +23,80 @@
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
 
   <h1 style="color: #ffffff;">Module 1: First-Order Time Response</h1>
-  <p style="color: #b0b0b0;">Tests first-order sensor dynamics under step and ramp inputs ($\tau\dot{y} + y = Kx$).</p>
+  <p style="color: #b0b0b0;">Explore a first-order sensor under step and ramp inputs: <strong>τ dy/dt + y = Kx</strong>, with transfer function <strong>G(s) = K/(τs + 1)</strong>.</p>
 
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;">
     <h3 style="color: #ffffff; margin-top: 0;">Controls</h3>
-    
-    <label>Input Type: </label>
+
+    <label for="inputType">Input Type: </label>
     <select id="inputType" style="padding: 5px; margin-bottom: 10px; background-color: #2d2d2d; color: #ffffff; border: 1px solid #444; border-radius: 4px;">
       <option value="step">Step Input</option>
       <option value="ramp">Ramp Input</option>
     </select>
     <br><br>
 
-    <label>Gain (K): <b id="kValue" style="color: #61afef;">1</b></label><br>
+    <label for="gainK">Gain (K): <b id="kValue" style="color: #61afef;">1</b></label><br>
     <input id="gainK" type="range" min="0.5" max="5" step="0.5" value="1" style="width:100%"><br><br>
 
-    <label>Time Constant (τ): <b id="tauValue" style="color: #61afef;">10</b> s</label><br>
+    <label for="tau">Time Constant (τ): <b id="tauValue" style="color: #61afef;">10</b> s</label><br>
     <input id="tau" type="range" min="1" max="30" step="1" value="10" style="width:100%">
   </div>
 
-  <!-- Main Response Plot -->
-  <div id="plot" style="width:100%; height:330px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
-
-  <!-- Error Fraction Log Plot (Appears for Step Input) -->
-  <div id="errorPlotContainer" style="margin-top: 20px;">
-    <div id="errorPlot" style="width:100%; height:300px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+  <!-- Module 1: Predict, then check (before moving a K or τ slider) -->
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;">Predict, then check</h3>
+    <p style="color: #b0b0b0;">Predict what will happen <strong>before</strong> changing K or τ, then move the slider to check your answer.</p>
+    <label for="prediction1">Your prediction: </label>
+    <select id="prediction1" style="padding: 7px; max-width: 100%; background: #2d2d2d; color: #ffffff; border: 1px solid #444; border-radius: 4px;">
+      <option value="">Choose a prediction first</option>
+      <option value="slower">Increasing τ makes the response slower (larger lag)</option>
+      <option value="faster">Decreasing τ makes the response faster (smaller lag)</option>
+      <option value="higher">Increasing K increases the output magnitude</option>
+      <option value="lower">Decreasing K decreases the output magnitude</option>
+    </select>
+    <p id="prediction1Feedback" aria-live="polite" style="margin-bottom: 0; font-weight: bold; color: #b0b0b0;">Select a prediction, then move the corresponding slider.</p>
   </div>
 
-  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
-    <h3 style="color: #ffffff; margin-top: 0;" id="validationTitle">Validation Check (First-Order Step)</h3>
-    <p id="validationResult" style="font-weight: bold; color: #61afef; line-height: 1.6;"></p>
+  <!-- Module 1: live response plot -->
+  <div id="plot" style="box-sizing: border-box; width:100%; height:390px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+
+  <!-- Module 1: error fraction, logarithmic y-axis, and measured ln(error) slope -->
+  <div id="errorPlotContainer" style="margin-top: 20px;">
+    <div id="errorPlot" style="box-sizing: border-box; width:100%; height:330px; background: #1e1e1e; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+  </div>
+
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;" id="validationTitle">Validation Check 1 (First-Order Step)</h3>
+    <div id="validationResult" aria-live="polite" style="line-height: 1.6;"></div>
   </div>
 
 <script>
-const A = 1; // Input amplitude scale
+// Module 1 only: closed-form first-order step/ramp response.
+const A = 1; // Step amplitude; ramp input slope is A units/s.
+const module1PlotConfig = { responsive: true, displaylogo: false, displayModeBar: false };
+const previousModule1Values = {
+  tau: Number(document.getElementById('tau').value),
+  K: Number(document.getElementById('gainK').value)
+};
+
+function module1PassLabel(passed) {
+  return `<strong style="color: ${passed ? '#98c379' : '#e06c75'};">${passed ? 'PASS' : 'FAIL'}</strong>`;
+}
+
+// Actual slope of ln(error fraction) against time; it should equal -1/τ.
+function module1LogErrorSlope(time, errorFraction) {
+  const n = time.length;
+  const meanTime = time.reduce((sum, value) => sum + value, 0) / n;
+  const logErrors = errorFraction.map(value => Math.log(value));
+  const meanLog = logErrors.reduce((sum, value) => sum + value, 0) / n;
+  let numerator = 0;
+  let denominator = 0;
+  for (let i = 0; i < n; i++) {
+    numerator += (time[i] - meanTime) * (logErrors[i] - meanLog);
+    denominator += (time[i] - meanTime) ** 2;
+  }
+  return numerator / denominator;
+}
 
 function draw() {
   const tau = parseFloat(document.getElementById('tau').value);
@@ -69,90 +109,163 @@ function draw() {
   const t = [];
   const y = [];
   const errorFraction = [];
-  
+  const input = [];
+  const desiredOutput = [];
+
   for (let i = 0; i <= 300; i++) {
     const ti = (5 * tau * i) / 300;
     t.push(ti);
 
     if (inputType === 'step') {
-      // Step response: y(t) = K * A * (1 - e^(-t/tau))
+      // Step: x(t) = A; y(t) = K*A*(1 - exp(-t/τ)).
       const yi = K * A * (1 - Math.exp(-ti / tau));
       y.push(yi);
-      // Error fraction for step: (Desired - Actual) / Desired = e^(-t/tau)
-      // To avoid log(0), clamp minimum error fraction
-      const ef = Math.max(Math.exp(-ti / tau), 1e-6);
-      errorFraction.push(ef);
+      input.push(A);
+      desiredOutput.push(K * A);
+      // Error fraction = (KA - y(t))/KA; a positive value is needed for log display.
+      errorFraction.push(Math.max((K * A - yi) / (K * A), 1e-12));
     } else {
-      // Ramp response: y(t) = K * A * (ti - tau + tau * exp(-ti/tau))
+      // Ramp: x(t) = A*t; y(t) = KA*(t - τ + τ*exp(-t/τ)).
+      input.push(A * ti);
+      desiredOutput.push(K * A * ti);
       y.push(K * A * (ti - tau + tau * Math.exp(-ti / tau)));
     }
   }
 
+  const commonLayout = {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0', size: 11 },
+    xaxis: { title: { text: 'Time t (s)', standoff: 8 }, gridcolor: '#333333', zerolinecolor: '#555555', automargin: true },
+    yaxis: { title: { text: 'Amplitude', standoff: 7 }, gridcolor: '#333333', zerolinecolor: '#555555', automargin: true },
+    margin: { t: 52, b: 74, l: 64, r: 18 },
+    legend: { orientation: 'h', x: 0, y: -0.26, font: { size: 10 } },
+    hovermode: 'x unified'
+  };
+
   if (inputType === 'step') {
-    document.getElementById('validationTitle').textContent = "Validation Check 1 (First-Order Step & Error Fraction)";
-    const valAtTau = K * A * (1 - Math.exp(-1)); 
-    const valAt3Tau = K * A * (1 - Math.exp(-3)); 
-    
-    document.getElementById('validationResult').innerHTML = 
-      `At t = τ (${tau}s): y = ${valAtTau.toFixed(3)} (Expected: ~${(0.632 * K * A).toFixed(3)}) [63.2%]<br>` +
-      `At t = 3τ (${3*tau}s): y = ${valAt3Tau.toFixed(3)} (Expected: ~${(0.95 * K * A).toFixed(3)}) [95%] — <b style="color: #98c379;">PASS</b><br>` +
-      `<span style="color: #e06c75;">Error-Fraction Plot:</span> Logarithmic axis verified with theoretical slope = -1/τ (-${(1/tau).toFixed(3)} s⁻¹).`;
+    document.getElementById('validationTitle').textContent = 'Validation Check 1 (First-Order Step & Log Error)';
+    // With 300 samples over 5τ, index 60 is τ and index 180 is 3τ.
+    const actualAtTau = y[60];
+    const actualAt3Tau = y[180];
+    const expectedAtTau = 0.632 * K * A;
+    const expectedAt3Tau = 0.95 * K * A;
+    const actualSlope = module1LogErrorSlope(t, errorFraction);
+    const expectedSlope = -1 / tau;
+    const toleranceAtTau = 0.005 * K * A;
+    const toleranceAt3Tau = 0.005 * K * A;
+    const slopeTolerance = 0.001 * Math.abs(expectedSlope);
+    const checkAtTau = Math.abs(actualAtTau - expectedAtTau) <= toleranceAtTau;
+    const checkAt3Tau = Math.abs(actualAt3Tau - expectedAt3Tau) <= toleranceAt3Tau;
+    const slopeCheck = Math.abs(actualSlope - expectedSlope) <= slopeTolerance;
+
+    document.getElementById('validationResult').innerHTML = `
+      <p style="margin-top: 0; color: #b0b0b0;">Values below are calculated from the plotted response, not hard-coded PASS labels.</p>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse: collapse; text-align: left; min-width: 440px; font-size: 13px;">
+          <thead><tr style="border-bottom:1px solid #444;"><th style="padding: 7px 5px;">Check</th><th style="padding: 7px 5px;">Expected</th><th style="padding: 7px 5px;">Calculated</th><th style="padding: 7px 5px;">Result</th></tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #333;"><td style="padding: 7px 5px;">y(τ), 63.2%</td><td style="padding: 7px 5px;">${expectedAtTau.toFixed(5)}</td><td style="padding: 7px 5px;">${actualAtTau.toFixed(5)}</td><td style="padding: 7px 5px;">${module1PassLabel(checkAtTau)}</td></tr>
+            <tr style="border-bottom:1px solid #333;"><td style="padding: 7px 5px;">y(3τ), 95%</td><td style="padding: 7px 5px;">${expectedAt3Tau.toFixed(5)}</td><td style="padding: 7px 5px;">${actualAt3Tau.toFixed(5)}</td><td style="padding: 7px 5px;">${module1PassLabel(checkAt3Tau)}</td></tr>
+            <tr><td style="padding: 7px 5px;">Slope of ln(error fraction) vs. t</td><td style="padding: 7px 5px;">${expectedSlope.toFixed(6)} s⁻¹</td><td style="padding: 7px 5px;">${actualSlope.toFixed(6)} s⁻¹</td><td style="padding: 7px 5px;">${module1PassLabel(slopeCheck)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-bottom:0; color:#b0b0b0;">Step input x(t) = ${A}; steady-state output = KA = ${(K * A).toFixed(2)}. Markers show t = τ = ${tau} s and t = 3τ = ${3 * tau} s. The error fraction is (KA − y)/KA; its natural-log slope is −1/τ.</p>`;
 
     document.getElementById('errorPlotContainer').style.display = 'block';
 
-    // Main Plot layout
-    const layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Step Response y(t)', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
+    const stepLayout = {
+      ...commonLayout,
+      title: { text: 'Step Response', font: { size: 14 } },
+      yaxis: { ...commonLayout.yaxis, title: { text: 'Output y(t)', standoff: 7 }, rangemode: 'tozero' },
+      shapes: [
+        { type: 'line', x0: tau, x1: tau, y0: 0, y1: actualAtTau, line: { color: '#e5c07b', width: 1.5, dash: 'dot' } },
+        { type: 'line', x0: 3 * tau, x1: 3 * tau, y0: 0, y1: actualAt3Tau, line: { color: '#98c379', width: 1.5, dash: 'dot' } }
+      ]
     };
-    Plotly.react('plot', [{ x: t, y: y, mode: 'lines', name: 'Response', line: { color: '#61afef', width: 3 } }], layout);
+    Plotly.react('plot', [
+      { x: t, y, mode: 'lines', name: 'Sensor response', line: { color: '#61afef', width: 3 } },
+      { x: t, y: desiredOutput, mode: 'lines', name: 'Final value KA', line: { color: '#b0b0b0', width: 1.5, dash: 'dash' } },
+      { x: [tau, 3 * tau], y: [actualAtTau, actualAt3Tau], mode: 'markers+text', name: '63.2% / 95% points', text: ['63.2% at τ', '95% at 3τ'], textposition: ['bottom right', 'top center'], textfont: { color: '#e5c07b', size: 11 }, marker: { color: ['#e5c07b', '#98c379'], size: 10, line: { width: 1, color: '#1e1e1e' } }, hovertemplate: 't = %{x:.3f} s<br>y = %{y:.5f}<extra></extra>' }
+    ], stepLayout, module1PlotConfig);
 
-    // Error Fraction Log Plot layout
     const errorLayout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Error-Fraction Plot (Logarithmic Axis, Slope = -1/τ)', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'Error Fraction (Log Scale)', type: 'log', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
+      ...commonLayout,
+      title: { text: 'Error Fraction (Log Axis)', font: { size: 14 } },
+      yaxis: { title: { text: 'Error fraction (log scale)', standoff: 6 }, type: 'log', gridcolor: '#333333', zerolinecolor: '#555555', automargin: true },
+      margin: { t: 52, b: 64, l: 72, r: 18 },
+      showlegend: false
     };
-    Plotly.react('errorPlot', [{ x: t, y: errorFraction, mode: 'lines', name: 'Error e(t)/A', line: { color: '#e06c75', width: 3 } }], errorLayout);
-
+    Plotly.react('errorPlot', [
+      { x: t, y: errorFraction, mode: 'lines', name: 'Error fraction', line: { color: '#e06c75', width: 3 }, hovertemplate: 't = %{x:.3f} s<br>Error fraction = %{y:.6f}<extra></extra>' }
+    ], errorLayout, module1PlotConfig);
   } else {
-    document.getElementById('validationTitle').textContent = "Ramp Response Analysis (Lag & Steady-State Error)";
-    // For ramp input x(t) = t, steady state output y(ss) = K(t - tau) -> Error = K*tau
+    document.getElementById('validationTitle').textContent = 'Ramp Response Analysis (Lag & Steady-State Error)';
+    // For x(t)=A*t, output approaches KA*(t-τ). The asymptotic tracking error relative to Kx is KAτ.
     const rampLag = tau;
-    const ssError = K * tau;
-
-    document.getElementById('validationResult').innerHTML = 
-      `<b style="color: #98c379;">Ramp Lag = τ = ${tau} s</b><br>` +
-      `<b style="color: #e5c07b;">Steady-State Error (e_ss) = K × τ = ${ssError.toFixed(2)}</b><br>` +
-      `The output tracks the input with a constant time delay equal to the time constant τ.`;
+    const ssError = K * A * tau;
+    const errorAtEnd = desiredOutput[desiredOutput.length - 1] - y[y.length - 1];
+    document.getElementById('validationResult').innerHTML = `
+      <p style="margin-top:0;"><strong style="color: #98c379;">Ramp time lag = τ = ${rampLag} s</strong></p>
+      <p><strong style="color: #e5c07b;">Steady-state tracking error relative to Kx(t): e<sub>ss</sub> = KAτ = ${ssError.toFixed(3)}</strong></p>
+      <p style="color:#b0b0b0;">Input: x(t) = ${A}t; ideal gain-scaled output: Kx(t) = ${K * A}t; actual output: y(t) = KA[t − τ + τe<sup>−t/τ</sup>].</p>
+      <p style="color:#b0b0b0; margin-bottom:0;">At t = 5τ (${5 * tau} s), the plotted tracking error Kx − y = ${errorAtEnd.toFixed(3)}; it approaches ${ssError.toFixed(3)} as t increases. The steady-state time lag is τ.</p>`;
 
     document.getElementById('errorPlotContainer').style.display = 'none';
-
-    const layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Ramp Response y(t) vs Input', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'y(t) (Ramp Response)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
+    const rampLayout = {
+      ...commonLayout,
+      title: { text: 'Ramp Input and Sensor Output', font: { size: 14 } },
+      yaxis: { ...commonLayout.yaxis, title: { text: 'Input / output', standoff: 7 }, rangemode: 'tozero' }
     };
-    Plotly.react('plot', [{ x: t, y: y, mode: 'lines', name: 'Ramp Response', line: { color: '#d19a66', width: 3 } }], layout);
+    Plotly.react('plot', [
+      { x: t, y: input, mode: 'lines', name: 'Input x(t)', line: { color: '#b0b0b0', width: 1.5, dash: 'dot' } },
+      { x: t, y: desiredOutput, mode: 'lines', name: 'Ideal Kx(t)', line: { color: '#98c379', width: 2, dash: 'dash' } },
+      { x: t, y, mode: 'lines', name: 'Sensor output y(t)', line: { color: '#d19a66', width: 3 } }
+    ], rampLayout, module1PlotConfig);
   }
 }
 
-document.getElementById('tau').addEventListener('input', draw);
-document.getElementById('gainK').addEventListener('input', draw);
+function module1CheckPrediction(changedParameter) {
+  const input = document.getElementById(changedParameter === 'tau' ? 'tau' : 'gainK');
+  const value = Number(input.value);
+  const previous = previousModule1Values[changedParameter];
+  if (value === previous) return;
+
+  const actual = changedParameter === 'tau'
+    ? (value > previous ? 'slower' : 'faster')
+    : (value > previous ? 'higher' : 'lower');
+  const messages = {
+    slower: 'Increasing τ slows the response and increases ramp lag.',
+    faster: 'Decreasing τ speeds the response and decreases ramp lag.',
+    higher: 'Increasing K raises the output magnitude (for the same input).',
+    lower: 'Decreasing K lowers the output magnitude (for the same input).'
+  };
+  const prediction = document.getElementById('prediction1');
+  const feedback = document.getElementById('prediction1Feedback');
+  if (prediction.value) {
+    const correct = prediction.value === actual;
+    feedback.textContent = `${correct ? 'Correct! ' : 'Not quite. '}${messages[actual]} Select a new prediction before the next move.`;
+    feedback.style.color = correct ? '#98c379' : '#e5c07b';
+    prediction.value = ''; // Require a new guess before the next movement.
+  } else {
+    feedback.textContent = `${messages[actual]} Choose a prediction before your next slider move.`;
+    feedback.style.color = '#b0b0b0';
+  }
+  previousModule1Values[changedParameter] = value;
+  draw();
+}
+
+document.getElementById('tau').addEventListener('input', () => module1CheckPrediction('tau'));
+document.getElementById('gainK').addEventListener('input', () => module1CheckPrediction('K'));
 document.getElementById('inputType').addEventListener('change', draw);
+document.getElementById('prediction1').addEventListener('change', () => {
+  const feedback = document.getElementById('prediction1Feedback');
+  feedback.textContent = document.getElementById('prediction1').value
+    ? 'Prediction chosen. Now move the corresponding K or τ slider to check it.'
+    : 'Select a prediction, then move the corresponding slider.';
+  feedback.style.color = '#b0b0b0';
+});
 draw();
 </script>
 <!--MODULE 2-->
