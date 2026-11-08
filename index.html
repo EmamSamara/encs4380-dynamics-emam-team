@@ -5,92 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dynamic Characteristics Toolkit - Module 1</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<script>
-//   time in seconds, wn in rad/s, zeta dimensionless (must be > 0)
-//   stepResponse returns the actual output K*A*(normalised curve)
-//   tp, Mp, wd are null when zeta >= 1 as no oscillations happen
-
-const ZETA_CRIT_TOL = 1e-3; // |zeta - 1| below this is treated as critically damped
-
-function checkParams(zeta, wn) {
-  if (!(zeta > 0) || !(wn > 0)) {
-    throw new Error("zeta and wn must both be > 0");
-  }
-}
-
-// Decay rate of the SLOWEST part of the response (rad/s).
-// This decides how long we must wait for the curve to settle.
-function slowestRate(zeta, wn) {
-  if (zeta < 1 - ZETA_CRIT_TOL) return zeta * wn;                         // envelope e^(-zeta*wn*t)
-  if (zeta <= 1 + ZETA_CRIT_TOL) return wn;                               // double pole at -wn
-  return wn * (zeta - Math.sqrt(zeta * zeta - 1));                        // slow real pole
-}
 
 
-// Window = 10 time constants of the slowest decay, capped at 100/wn
-// so a very small zeta does not produce an enormous window
-function timeVector(zeta, wn, n = 1000) {
-  checkParams(zeta, wn);
-  const tEnd = Math.min(10 / slowestRate(zeta, wn), 100 / wn);
-  return Array.from({ length: n }, (_, i) => (tEnd * i) / (n - 1));
-}
-
-// ---- the three step responses (normalised: y/(K*A)) ----
-
-// zeta < 1:  1 - e^(-sigma t) [cos(wd t) + (sigma/wd) sin(wd t)]
-function underdamped(t, zeta, wn) {
-  const sigma = zeta * wn;
-  const wd = wn * Math.sqrt(1 - zeta * zeta);
-  return t.map(ti =>
-    1 - Math.exp(-sigma * ti) * (Math.cos(wd * ti) + (sigma / wd) * Math.sin(wd * ti))
-  );
-}
-
-// zeta = 1:  1 - (1 + wn t) e^(-wn t)
-function critical(t, wn) {
-  return t.map(ti => 1 - (1 + wn * ti) * Math.exp(-wn * ti));
-}
-
-// zeta > 1:  1 - (z+r)/(2r) e^(-wn(z-r)t) + (z-r)/(2r) e^(-wn(z+r)t),  r = sqrt(z^2-1)
-function overdamped(t, zeta, wn) {
-  const r = Math.sqrt(zeta * zeta - 1);
-  const c1 = (zeta + r) / (2 * r);
-  const c2 = (zeta - r) / (2 * r);
-  const p1 = wn * (zeta - r); // slow pole
-  const p2 = wn * (zeta + r); // fast pole
-  return t.map(ti => 1 - c1 * Math.exp(-p1 * ti) + c2 * Math.exp(-p2 * ti));
-}
-
-
-function stepResponse(t, zeta, wn, K = 1, A = 1) {
-  checkParams(zeta, wn);
-  let base;
-  if (zeta < 1 - ZETA_CRIT_TOL) base = underdamped(t, zeta, wn);
-  else if (zeta <= 1 + ZETA_CRIT_TOL) base = critical(t, wn);
-  else base = overdamped(t, zeta, wn);
-  return base.map(v => K * A * v);
-}
-
-// Mp = exp(-pi*zeta/sqrt(1-zeta^2)),  tp = pi/wd,  wd = wn*sqrt(1-zeta^2)
-function characteristics(zeta, wn) {
-  checkParams(zeta, wn);
-  if (zeta >= 1 - ZETA_CRIT_TOL) {
-    return { wd: null, tp: null, Mp: null };
-  }
-  const root = Math.sqrt(1 - zeta * zeta);
-  const wd = wn * root;
-  return {
-    wd: wd,
-    tp: Math.PI / wd,
-    Mp: Math.exp((-Math.PI * zeta) / root),
-  };
-}
-
-// Make the functions usable from a <script> tag (browser) and from Node (tests)
-if (typeof module !== "undefined") {
-  module.exports = { timeVector, stepResponse, characteristics };
-}
-</script>
 <style>
   #module4Check:hover{
     background-color: #ccddec !important;
@@ -101,7 +17,8 @@ if (typeof module !== "undefined") {
   #module4HintButton:hover{
     background-color: #ab9fc4 !important;
   }
-  </style>
+</style>
+
 </head>
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
 
@@ -1337,90 +1254,420 @@ updateSuperposition();
 <hr style="margin: 40px 0; border: 1px solid #333;">
 
   <h1 style="color: #ffffff;">Module 3: Second-Order Response</h1>
-  <p style="color: #b0b0b0;">Step response of a second-order sensor (y″/ωn² + 2ζy′/ωn + y = Kx). Move ζ and ωn and watch the curve.</p>
+  <p style="color: #b0b0b0;">Mass-spring-damper (m x″ + b x′ + k x = F) driven by a step force F = k, so the final position is always 1 m. Move m, b and k and watch the response, the poles and the state.</p>
 
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;">
     <h3 style="color: #ffffff; margin-top: 0;">Controls</h3>
 
-    <label>Damping ratio (ζ): <b id="zetaValue" style="color: #61afef;">0.5</b> — <b id="caseLabel" style="color: #e5c07b;"></b></label><br>
-    <input id="zeta" type="range" min="0.05" max="3" step="0.05" value="0.5" style="width:100%"><br><br>
+    <label>Mass (m): <b id="mass3Value" style="color: #61afef;">1</b> kg</label><br>
+    <input id="mass3" type="range" min="0.5" max="5" step="0.5" value="1" style="width:100%"><br><br>
 
-    <label>Natural frequency (ωn): <b id="wnValue" style="color: #61afef;">2</b> rad/s</label><br>
-    <input id="wn" type="range" min="0.5" max="20" step="0.5" value="2" style="width:100%">
+    <label>Damping (b): <b id="damp3Value" style="color: #61afef;">2</b> N·s/m</label><br>
+    <input id="damp3" type="range" min="0.5" max="10" step="0.5" value="2" style="width:100%"><br><br>
+
+    <label>Stiffness (k): <b id="stiff3Value" style="color: #61afef;">4</b> N/m</label><br>
+    <input id="stiff3" type="range" min="1" max="20" step="1" value="4" style="width:100%">
+  </div>
+
+  <!-- Derived parameters with their equations -->
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;">Derived Parameters</h3>
+    <p id="derived3" style="line-height: 1.8; margin: 0;"></p>
   </div>
 
   <!-- Main Response Plot -->
-  <div id="plot3" style="width:100%; height:360px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+  <div id="plot3" style="width:100%; height:340px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
 
-  <!-- Characteristics read-out -->
+  <!-- Characteristics -->
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
     <h3 style="color: #ffffff; margin-top: 0;">Characteristics</h3>
-    <p id="charResult" style="font-weight: bold; color: #61afef; line-height: 1.6;"></p>
+    <p id="charResult3" style="font-weight: bold; color: #61afef; line-height: 1.6; margin-bottom: 8px;"></p>
+    <p style="color: #b0b0b0; font-size: 13px; margin: 0;">Rise time: 10 % to 90 % of the final value. Settling time: last time outside a ±5 % band. Both are read off the curve.</p>
   </div>
 
-  <!-- Validation checks 4 and 5 (fixed values, independent of the sliders) -->
+  <!-- State space -->
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
-    <h3 style="color: #ffffff; margin-top: 0;">Validation Checks 4 and 5 (Second-Order Step)</h3>
+    <h3 style="color: #ffffff; margin-top: 0;">State-Space Form</h3>
+    <p style="color: #b0b0b0; margin-top: 0;">States: x₁ = x (position), x₂ = x′ (velocity). Model: x′ = A x + B F, output y = x₁.</p>
+    <div id="stateSpace3" style="overflow-x: auto; line-height: 2.6;"></div>
+  </div>
+
+  <!-- s-plane -->
+  <div id="splane3" style="width:100%; height:340px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;">Poles and Eigenvalues</h3>
+    <p id="poleResult3" style="line-height: 1.8; margin: 0;"></p>
+  </div>
+
+  <!-- Phase plane -->
+  <div id="phase3" style="width:100%; height:340px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+
+  <!-- Validation -->
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;">Validation Checks 4, 5 and 6</h3>
     <p id="validationResult3" style="font-weight: bold; color: #61afef; line-height: 1.6;"></p>
   </div>
 
+<!-- MODULE 3: MATHS (all model functions) -->
+<script>
+//   time in seconds, wn in rad/s, zeta dimensionless (must be > 0)
+//   stepResponse returns the actual output K*A*(normalised curve)
+//   tp, Mp, wd are null when zeta >= 1 as no oscillations happen
+
+const ZETA_CRIT_TOL = 1e-3; // |zeta - 1| below this is treated as critically damped
+
+function checkParams(zeta, wn) {
+  if (!(zeta > 0) || !(wn > 0)) {
+    throw new Error("zeta and wn must both be > 0");
+  }
+}
+
+// Decay rate of the SLOWEST part of the response (rad/s).
+// This decides how long we must wait for the curve to settle.
+function slowestRate(zeta, wn) {
+  if (zeta < 1 - ZETA_CRIT_TOL) return zeta * wn;                         // envelope e^(-zeta*wn*t)
+  if (zeta <= 1 + ZETA_CRIT_TOL) return wn;                               // double pole at -wn
+  return wn * (zeta - Math.sqrt(zeta * zeta - 1));                        // slow real pole
+}
+
+
+// Window = 10 time constants of the slowest decay, capped at 100/wn
+// so a very small zeta does not produce an enormous window
+function timeVector(zeta, wn, n = 1000) {
+  checkParams(zeta, wn);
+  const tEnd = Math.min(10 / slowestRate(zeta, wn), 100 / wn);
+  return Array.from({ length: n }, (_, i) => (tEnd * i) / (n - 1));
+}
+
+// ---- the three step responses (normalised: y/(K*A)) ----
+
+// zeta < 1:  1 - e^(-sigma t) [cos(wd t) + (sigma/wd) sin(wd t)]
+function underdamped(t, zeta, wn) {
+  const sigma = zeta * wn;
+  const wd = wn * Math.sqrt(1 - zeta * zeta);
+  return t.map(ti =>
+    1 - Math.exp(-sigma * ti) * (Math.cos(wd * ti) + (sigma / wd) * Math.sin(wd * ti))
+  );
+}
+
+// zeta = 1:  1 - (1 + wn t) e^(-wn t)
+function critical(t, wn) {
+  return t.map(ti => 1 - (1 + wn * ti) * Math.exp(-wn * ti));
+}
+
+// zeta > 1:  1 - (z+r)/(2r) e^(-wn(z-r)t) + (z-r)/(2r) e^(-wn(z+r)t),  r = sqrt(z^2-1)
+function overdamped(t, zeta, wn) {
+  const r = Math.sqrt(zeta * zeta - 1);
+  const c1 = (zeta + r) / (2 * r);
+  const c2 = (zeta - r) / (2 * r);
+  const p1 = wn * (zeta - r); // slow pole
+  const p2 = wn * (zeta + r); // fast pole
+  return t.map(ti => 1 - c1 * Math.exp(-p1 * ti) + c2 * Math.exp(-p2 * ti));
+}
+
+
+function stepResponse(t, zeta, wn, K = 1, A = 1) {
+  checkParams(zeta, wn);
+  let base;
+  if (zeta < 1 - ZETA_CRIT_TOL) base = underdamped(t, zeta, wn);
+  else if (zeta <= 1 + ZETA_CRIT_TOL) base = critical(t, wn);
+  else base = overdamped(t, zeta, wn);
+  return base.map(v => K * A * v);
+}
+
+// Mp = exp(-pi*zeta/sqrt(1-zeta^2)),  tp = pi/wd,  wd = wn*sqrt(1-zeta^2)
+function characteristics(zeta, wn) {
+  checkParams(zeta, wn);
+  if (zeta >= 1 - ZETA_CRIT_TOL) {
+    return { wd: null, tp: null, Mp: null };
+  }
+  const root = Math.sqrt(1 - zeta * zeta);
+  const wd = wn * root;
+  return {
+    wd: wd,
+    tp: Math.PI / wd,
+    Mp: Math.exp((-Math.PI * zeta) / root),
+  };
+}
+
+// ===== State-space part: m, b, k  ->  matrices, eigenvalues, poles =====
+// Model: m x'' + b x' + k x = F,  states x1 = x, x2 = x'
+// Step force is F = k, so the final position is F/k = 1 (as in the State-Space notes)
+
+function checkMBK(m, b, k) {
+  if (!(m > 0) || !(b > 0) || !(k > 0)) {
+    throw new Error("m, b and k must all be > 0");
+  }
+}
+
+// From the notes (Example 3):  wn = sqrt(k/m),  zeta = b / (2 sqrt(k m))
+function dampingFromMBK(m, b, k) {
+  checkMBK(m, b, k);
+  return { wn: Math.sqrt(k / m), zeta: b / (2 * Math.sqrt(k * m)) };
+}
+
+// x' = A x + B F,   A = [[0, 1], [-k/m, -b/m]],   B = [0, 1/m]  (a column, stored flat)
+function buildMatrices(m, b, k) {
+  checkMBK(m, b, k);
+  return {
+    A: [[0, 1], [-k / m, -b / m]],
+    B: [0, 1 / m],
+  };
+}
+
+// MATRIX route: eigenvalues of a 2x2 matrix from its trace and determinant.
+// det(lambda I - A) = lambda^2 - tr*lambda + det = 0
+// lambda = tr/2 +- sqrt(tr^2/4 - det)
+function eigenvaluesOfA(A) {
+  const tr = A[0][0] + A[1][1];
+  const det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+  const disc = (tr * tr) / 4 - det;
+  if (disc >= 0) {
+    const r = Math.sqrt(disc);
+    return [{ re: tr / 2 + r, im: 0 }, { re: tr / 2 - r, im: 0 }];
+  }
+  const w = Math.sqrt(-disc);
+  return [{ re: tr / 2, im: w }, { re: tr / 2, im: -w }];
+}
+
+// FORMULA route: poles from zeta and wn.  s = -zeta*wn +- wn*sqrt(zeta^2 - 1)
+// Does not use the matrix A at all, so comparing it with eigenvaluesOfA is a real check.
+function polesFromZetaWn(zeta, wn) {
+  checkParams(zeta, wn);
+  const d = zeta * zeta - 1;
+  if (d >= 0) {
+    const r = wn * Math.sqrt(d);
+    return [{ re: -zeta * wn + r, im: 0 }, { re: -zeta * wn - r, im: 0 }];
+  }
+  const wd = wn * Math.sqrt(-d);
+  return [{ re: -zeta * wn, im: wd }, { re: -zeta * wn, im: -wd }];
+}
+
+// ===== RK4 simulation of the state equation x' = A x + B u(t) =====
+
+// Generic RK4 (Section 6.2 / 7.1 of the notes), single input u(t).
+// Takes nSteps steps of size h; records the state at step 0 and then every `every` steps.
+function simulate(A, B, u, x0, h, nSteps, every = 1) {
+  // f(x, t) = A x + B u(t): the slope of every state
+  const f = (x, t) =>
+    A.map((row, i) => row.reduce((sum, a, j) => sum + a * x[j], 0) + B[i] * u(t));
+  const add = (x, k, c) => x.map((xi, i) => xi + c * k[i]); // x + c*k
+
+  let x = x0.slice();
+  const T = [0];
+  const X = [x0.slice()];
+  for (let step = 0; step < nSteps; step++) {
+    const t = step * h;
+    const k1 = f(x, t);
+    const k2 = f(add(x, k1, h / 2), t + h / 2);
+    const k3 = f(add(x, k2, h / 2), t + h / 2);
+    const k4 = f(add(x, k3, h), t + h);
+    x = x.map((xi, i) => xi + (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+    if ((step + 1) % every === 0) {
+      T.push((step + 1) * h);
+      X.push(x.slice());
+    }
+  }
+  return { T, X };
+}
+
+// Step response of the mass-spring-damper from rest, with step force F = k (final position = 1).
+// Returns the SAME time samples as timeVector(zeta, wn, n), so it can be compared point by point
+// with stepResponse().  x1 = position, x2 = velocity (x1 vs x2 is the phase plane).
+// Internal step: h <= 1 / (20 * largest |eigenvalue|), the notes' "one twentieth" rule.
+function stepStateSpace(m, b, k, n = 1000) {
+  const { wn, zeta } = dampingFromMBK(m, b, k);
+  const { A, B } = buildMatrices(m, b, k);
+  const t = timeVector(zeta, wn, n);
+  const tEnd = t[n - 1];
+
+  const fastest = Math.max(...eigenvaluesOfA(A).map(e => Math.hypot(e.re, e.im)));
+  const perSample = Math.max(1, Math.ceil((tEnd * 20 * fastest) / (n - 1))); // RK4 steps between samples
+  const nSteps = perSample * (n - 1);
+  const h = tEnd / nSteps;
+
+  const F = k;
+  const { T, X } = simulate(A, B, () => F, [0, 0], h, nSteps, perSample);
+  return { t: T, x1: X.map(x => x[0]), x2: X.map(x => x[1]), h };
+}
+
+// ===== Rise time and settling time, read numerically off a sampled curve =====
+// Both work on arrays (t, y) from stepResponse() or stepStateSpace(), for ANY damping case.
+// `final` is the steady-state value: 1 for the normalised curves, K*A otherwise.
+
+// Time at which the curve first reaches `level` (linear interpolation between samples).
+function firstCrossing(t, y, level) {
+  for (let i = 1; i < y.length; i++) {
+    if (y[i - 1] < level && y[i] >= level) {
+      return t[i - 1] + ((level - y[i - 1]) / (y[i] - y[i - 1])) * (t[i] - t[i - 1]);
+    }
+  }
+  return null; // never reached
+}
+
+// Rise time = time from 10 % to 90 % of the final value (first crossings).
+function riseTime(t, y, final = 1) {
+  const t10 = firstCrossing(t, y, 0.1 * final);
+  const t90 = firstCrossing(t, y, 0.9 * final);
+  if (t10 === null || t90 === null) return null;
+  return t90 - t10;
+}
+
+// Settling time = last moment the curve is outside the band final*(1 +- band); stays inside after.
+// Returns 0 if it never leaves the band, null if it is still outside at the end of the window.
+function settlingTime(t, y, final = 1, band = 0.05) {
+  const hi = final * (1 + band);
+  const lo = final * (1 - band);
+  let last = -1; // index of the last sample outside the band
+  for (let i = 0; i < y.length; i++) {
+    if (y[i] > hi || y[i] < lo) last = i;
+  }
+  if (last === -1) return 0;
+  if (last === y.length - 1) return null;
+  // the band edge that the curve crossed between sample `last` and `last + 1`
+  const edge = y[last] > hi ? hi : lo;
+  return t[last] + ((edge - y[last]) / (y[last + 1] - y[last])) * (t[last + 1] - t[last]);
+}
+
+// Make the functions usable from a <script> tag (browser) and from Node (tests)
+if (typeof module !== "undefined") {
+  module.exports = {
+    timeVector, stepResponse, characteristics,
+    dampingFromMBK, buildMatrices, eigenvaluesOfA, polesFromZetaWn,
+    simulate, stepStateSpace, riseTime, settlingTime,
+  };
+}
+</script>
+
+<!-- MODULE 3: PAGE CODE (sliders, plots, panels, validation) -->
 <script>
 const PASS = '<b style="color: #98c379;">PASS</b>';
 const FAIL = '<b style="color: #e06c75;">FAIL</b>';
 
+// ---------- display helpers (Module 3 only) ----------
+const m3Minus = s => s.replace(/-/g, '−');
+const m3F3 = v => m3Minus(v.toFixed(3));
+const m3FmtNum = v => m3Minus(String(+v.toFixed(3)));
+function m3FmtC(c) {
+  if (c.im === 0) return m3F3(c.re);
+  return `${m3F3(c.re)} ${c.im >= 0 ? '+' : '−'} j${Math.abs(c.im).toFixed(3)}`;
+}
+function m3MatrixHTML(rows, color) {
+  const cells = rows.map(r =>
+    '<tr>' + r.map(v => `<td style="padding: 0 10px; text-align: center; color: ${color};">${v}</td>`).join('') + '</tr>'
+  ).join('');
+  return '<span style="display: inline-block; vertical-align: middle; border-left: 2px solid #61afef; border-right: 2px solid #61afef; border-radius: 6px; padding: 0 4px; font-family: monospace; line-height: 1.6;">' +
+         `<table style="border-collapse: collapse;">${cells}</table></span>`;
+}
 function caseName3(zeta) {
   if (zeta < 1 - ZETA_CRIT_TOL) return 'Underdamped';
   if (zeta <= 1 + ZETA_CRIT_TOL) return 'Critically damped';
   return 'Overdamped';
 }
+function m3BaseLayout(title, xTitle, yTitle) {
+  return {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0' },
+    title: { text: title, font: { size: 14 } },
+    xaxis: { title: xTitle, gridcolor: '#333333', zerolinecolor: '#555555' },
+    yaxis: { title: yTitle, gridcolor: '#333333', zerolinecolor: '#555555' },
+    margin: { t: 30, b: 40, l: 50, r: 20 },
+    legend: { orientation: 'h', y: -0.25 }
+  };
+}
+const m3PlotConfig = { responsive: true };
 
+// ---------- main redraw ----------
 function draw3() {
-  const zeta = parseFloat(document.getElementById('zeta').value);
-  const wn = parseFloat(document.getElementById('wn').value);
+  const m = parseFloat(document.getElementById('mass3').value);
+  const b = parseFloat(document.getElementById('damp3').value);
+  const k = parseFloat(document.getElementById('stiff3').value);
 
-  document.getElementById('zetaValue').textContent = zeta;
-  document.getElementById('wnValue').textContent = wn;
-  document.getElementById('caseLabel').textContent = caseName3(zeta);
+  document.getElementById('mass3Value').textContent = m;
+  document.getElementById('damp3Value').textContent = b;
+  document.getElementById('stiff3Value').textContent = k;
 
-  // All maths comes from model.js
+  // everything below follows from m, b, k
+  const { wn, zeta } = dampingFromMBK(m, b, k);
+  const { A, B } = buildMatrices(m, b, k);
   const t = timeVector(zeta, wn);
   const y = stepResponse(t, zeta, wn);
   const c = characteristics(zeta, wn);
+  const tr = riseTime(t, y);
+  const ts = settlingTime(t, y);
   const tEnd = t[t.length - 1];
 
+  // Derived parameters: equation in m, b, k, then the value
+  document.getElementById('derived3').innerHTML =
+    `<span style="color: #b0b0b0;">Natural frequency: ω<sub>n</sub> = √(k / m)</span> &nbsp;=&nbsp; <b style="color: #61afef;">${wn.toFixed(3)} rad/s</b><br>` +
+    `<span style="color: #b0b0b0;">Damping ratio: ζ = b / (2√(k·m))</span> &nbsp;=&nbsp; <b style="color: #61afef;">${zeta.toFixed(3)}</b> ` +
+    `<b style="color: #e5c07b;">— ${caseName3(zeta)}</b>`;
+
+  // Step response plot
   const traces = [
     { x: t, y: y, mode: 'lines', name: 'Response', line: { color: '#61afef', width: 3 } },
     { x: [0, tEnd], y: [1, 1], mode: 'lines', name: 'Final value', line: { color: '#555555', width: 1, dash: 'dash' } }
   ];
-
+  let charText = '';
   if (c.tp !== null) {
-    traces.push({
-      x: [c.tp], y: [1 + c.Mp], mode: 'markers', name: 'Peak',
-      marker: { color: '#e06c75', size: 10 }
-    });
-    document.getElementById('charResult').innerHTML =
-      `Damped frequency ωd = ${c.wd.toFixed(3)} rad/s<br>` +
-      `Peak time tp = π/ωd = ${c.tp.toFixed(3)} s<br>` +
-      `Overshoot Mp = ${(c.Mp * 100).toFixed(1)} % (peak value ${(1 + c.Mp).toFixed(3)})`;
+    traces.push({ x: [c.tp], y: [1 + c.Mp], mode: 'markers', name: 'Peak', marker: { color: '#e06c75', size: 10 } });
+    charText +=
+      `Overshoot Mp = ${(c.Mp * 100).toFixed(1)} % (peak value ${(1 + c.Mp).toFixed(3)})<br>` +
+      `Peak time tp = π/ω<sub>d</sub> = ${c.tp.toFixed(3)} s &nbsp;(ω<sub>d</sub> = ${c.wd.toFixed(3)} rad/s)<br>`;
   } else {
-    document.getElementById('charResult').innerHTML =
-      `No overshoot and no peak time: the response never exceeds the final value.<br>` +
-      `<span style="color: #e5c07b;">tp, Mp and ωd exist only for ζ &lt; 1.</span>`;
+    charText += `No overshoot and no peak time (they exist only for ζ &lt; 1).<br>`;
   }
+  charText += tr === null ? 'Rise time: not reached within the window<br>' : `Rise time tr = ${tr.toFixed(3)} s<br>`;
+  charText += ts === null ? 'Settling time: not settled within the window' : `Settling time ts = ${ts.toFixed(3)} s`;
+  document.getElementById('charResult3').innerHTML = charText;
+  Plotly.react('plot3', traces, m3BaseLayout('Step Response x(t), F = k', 'Time t (s)', 'Position x (m)'), m3PlotConfig);
 
-  const layout = {
-    paper_bgcolor: '#1e1e1e',
-    plot_bgcolor: '#1e1e1e',
-    font: { color: '#e0e0e0' },
-    title: { text: 'Step Response y(t)/(KA)', font: { size: 14 } },
-    xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-    yaxis: { title: 'y(t)/(KA)', gridcolor: '#333333', zerolinecolor: '#555555' },
-    margin: { t: 30, b: 40, l: 50, r: 20 },
-    legend: { orientation: 'h', y: -0.25 }
-  };
-  Plotly.react('plot3', traces, layout);
+  // State-space matrices, live
+  const symA = [['0', '1'], ['−k/m', '−b/m']];
+  const symB = [['0'], ['1/m']];
+  const numA = A.map(r => r.map(m3FmtNum));
+  const numB = B.map(v => [m3FmtNum(v)]);
+  document.getElementById('stateSpace3').innerHTML =
+    `<div style="white-space: nowrap;">A = ${m3MatrixHTML(symA, '#b0b0b0')} = ${m3MatrixHTML(numA, '#61afef')}</div>` +
+    `<div style="white-space: nowrap;">B = ${m3MatrixHTML(symB, '#b0b0b0')} = ${m3MatrixHTML(numB, '#61afef')}</div>`;
+
+  // s-plane: poles (formula route) and eigenvalues of A (matrix route)
+  const poles = polesFromZetaWn(zeta, wn);
+  const eig = eigenvaluesOfA(A);
+  const R = Math.max(...poles.map(p => Math.hypot(p.re, p.im))) * 1.25;
+  const sLayout = m3BaseLayout('s-plane: poles and eigenvalues of A', 'Real part σ', 'Imaginary part jω');
+  sLayout.xaxis.range = [-R, 0.3 * R];
+  sLayout.xaxis.zerolinecolor = '#aaaaaa';
+  sLayout.yaxis.range = [-R, R];
+  sLayout.yaxis.zerolinecolor = '#aaaaaa';
+  sLayout.yaxis.scaleanchor = 'x';
+  sLayout.yaxis.scaleratio = 1;
+  Plotly.react('splane3', [
+    { x: poles.map(p => p.re), y: poles.map(p => p.im), mode: 'markers', name: 'Poles (from ζ, ωn)',
+      marker: { symbol: 'x', color: '#e06c75', size: 12, line: { width: 3, color: '#e06c75' } } },
+    { x: eig.map(e => e.re), y: eig.map(e => e.im), mode: 'markers', name: 'Eigenvalues of A',
+      marker: { symbol: 'circle-open', color: '#98c379', size: 20, line: { width: 2, color: '#98c379' } } }
+  ], sLayout, m3PlotConfig);
+
+  const diff = Math.max(...eig.map((e, i) => Math.hypot(e.re - poles[i].re, e.im - poles[i].im)));
+  document.getElementById('poleResult3').innerHTML =
+    `<span style="color: #b0b0b0;">Poles from ζ and ω<sub>n</sub> (s = −ζω<sub>n</sub> ± ω<sub>n</sub>√(ζ² − 1)):</span> <b style="color: #e06c75;">${m3FmtC(poles[0])}, &nbsp;${m3FmtC(poles[1])}</b><br>` +
+    `<span style="color: #b0b0b0;">Eigenvalues of A (roots of λ² − tr(A)·λ + det(A)):</span> <b style="color: #98c379;">${m3FmtC(eig[0])}, &nbsp;${m3FmtC(eig[1])}</b><br>` +
+    `<span style="color: #b0b0b0;">Largest difference:</span> <b>${diff.toExponential(1)}</b> — ${diff < 1e-9 ? 'the two routes give the same numbers' : 'MISMATCH'}`;
+
+  // Phase plane from the RK4 state-space simulation
+  const sim = stepStateSpace(m, b, k);
+  const pLayout = m3BaseLayout('Phase plane: velocity vs position during the step', 'Position x₁ (m)', 'Velocity x₂ (m/s)');
+  Plotly.react('phase3', [
+    { x: sim.x1, y: sim.x2, mode: 'lines', name: 'State path', line: { color: '#61afef', width: 3 } },
+    { x: [0], y: [0], mode: 'markers', name: 'Start (0, 0)', marker: { color: '#98c379', size: 10 } },
+    { x: [1], y: [0], mode: 'markers', name: 'Final state (1, 0)', marker: { color: '#e06c75', size: 10, symbol: 'star' } }
+  ], pLayout, m3PlotConfig);
 }
 
+// ---------- validation (fixed values, independent of the sliders) ----------
 function validate3() {
   // Check 4: zeta = 0.5, wn = 2 -> overshoot 16.3 %
   const c4 = characteristics(0.5, 2);
@@ -1433,14 +1680,24 @@ function validate3() {
   const y5 = stepResponse(timeVector(1, 2), 1, 2);
   const ok5 = Math.max(...y5) <= 1 && c5.Mp === null;
 
+  // Check 6: m = 1, b = 2, k = 4 -> eigenvalues -1 +- j1.732, equal to the poles
+  const mat6 = buildMatrices(1, 2, 4);
+  const d6 = dampingFromMBK(1, 2, 4);
+  const e6 = eigenvaluesOfA(mat6.A);
+  const p6 = polesFromZetaWn(d6.zeta, d6.wn);
+  const okValue = e6.every(e => Math.abs(e.re + 1) < 1e-6 && Math.abs(Math.abs(e.im) - 1.732) < 1e-3);
+  const okEqual = e6.every((e, i) => Math.hypot(e.re - p6[i].re, e.im - p6[i].im) < 1e-9);
+  const ok6 = okValue && okEqual;
+
   document.getElementById('validationResult3').innerHTML =
-    `Check 4 (ζ = 0.5): overshoot = ${(c4.Mp * 100).toFixed(1)} % (Expected: 16.3 %), ` +
-    `peak read from the curve = ${(sampled4 * 100).toFixed(1)} % — ${ok4 ? PASS : FAIL}<br>` +
-    `Check 5 (ζ = 1): maximum of curve = ${Math.max(...y5).toFixed(4)} (Expected: no overshoot, ≤ 1) — ${ok5 ? PASS : FAIL}`;
+    `Check 4 (ζ = 0.5, ω<sub>n</sub> = 2): overshoot = ${(c4.Mp * 100).toFixed(1)} % (Expected: 16.3 %), ` +
+    `read from the curve = ${(sampled4 * 100).toFixed(1)} % — ${ok4 ? PASS : FAIL}<br>` +
+    `Check 5 (ζ = 1): maximum of curve = ${Math.max(...y5).toFixed(4)} (Expected: no overshoot, ≤ 1) — ${ok5 ? PASS : FAIL}<br>` +
+    `Check 6 (m = 1, b = 2, k = 4): eigenvalues of A = ${m3FmtC(e6[0])}, ${m3FmtC(e6[1])} ` +
+    `(Expected: −1.000 ± j1.732), equal to the poles ${m3FmtC(p6[0])}, ${m3FmtC(p6[1])} — ${ok6 ? PASS : FAIL}`;
 }
 
-document.getElementById('zeta').addEventListener('input', draw3);
-document.getElementById('wn').addEventListener('input', draw3);
+['mass3', 'damp3', 'stiff3'].forEach(id => document.getElementById(id).addEventListener('input', draw3));
 validate3();
 draw3();
 </script>
