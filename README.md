@@ -20,7 +20,6 @@ analysis, state-space visualization, and a sensor parameter guessing game.
 | Mustafa Fayed | 1220814 | Module 2: input/output sine plots, amplitude ratio, phase lag, frequency-response plots, cutoff frequency, dynamic-error calculator, and superposition of sine waves (bonus). |
 | Omar Khaldi | 1231465 | Module 3: second-order step responses, response characteristics, poles in the s-plane, state-space modelling, eigenvalues, and phase-plane visualization. |
 | Fawzy Abu Kwaik | 1201151 | Module 4: randomized sensor challenges, parameter estimation, measurement noise, session scoring, hints, and guessed/true response overlays. |
-| Israa Masalmeh | 1230566 | Tested all four modules and verified their functionality and validation results. |
 
 ## How to Run
 
