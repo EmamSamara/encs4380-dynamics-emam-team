@@ -82,6 +82,80 @@
     .homework-options { grid-template-columns: 1fr; }
     .homework-option { min-height: 0; }
   }
+
+  #homework-entry.showing-p1 { align-items: flex-start; }
+  #homework-entry.showing-p1 .homework-panel { max-width: 860px; }
+  .p1-back { margin-bottom: 26px; }
+  .p1-preview-note {
+    padding: 12px 14px;
+    margin: 0 0 20px;
+    border: 1px solid #46515b;
+    border-radius: 8px;
+    background: #24303b;
+    color: #c5d8e8;
+    font-size: 13px;
+  }
+  .p1-card {
+    margin-top: 16px;
+    padding: 22px;
+    background: #252525;
+    border: 1px solid #3d3d3d;
+    border-radius: 12px;
+  }
+  .p1-card h2 { color: #fff; margin: 0 0 20px; font-size: 19px; }
+  .p1-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .p1-field { display: flex; flex-direction: column; gap: 10px; color: #e0e0e0; font-size: 14px; }
+  .p1-field select, .p1-prediction {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    color: #e0e0e0;
+    background: #303030;
+    font: inherit;
+  }
+  .p1-field select:disabled, .p1-prediction:disabled { opacity: 0.65; }
+  .p1-field input { width: 100%; margin: 2px 0; accent-color: #61afef; }
+  .p1-field input:disabled { opacity: 0.7; }
+  .p1-value { color: #61afef; font-weight: bold; }
+  .p1-empty, .p1-plot-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 20px;
+    border: 1px dashed #555;
+    border-radius: 8px;
+    color: #929292;
+    background: #1e1e1e;
+    font-size: 14px;
+  }
+  .p1-empty { min-height: 104px; }
+  .p1-plot-empty { min-height: 240px; }
+  .p1-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .p1-metric {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 76px;
+    padding: 14px;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1e1e1e;
+  }
+  .p1-metric span { color: #b0b0b0; font-size: 12px; }
+  .p1-metric strong { color: #61afef; font-size: 22px; }
+  .p1-secondary { color: #b0b0b0; font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
+  @media (max-width: 560px) {
+    #homework-entry { padding: 12px; }
+    .p1-card { padding: 16px; }
+    .p1-controls { grid-template-columns: 1fr; }
+    .p1-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .p1-plot-empty { min-height: 210px; }
+  }
   #module4Check:hover{
     background-color: #ccddec !important;
   }
@@ -117,10 +191,73 @@
         </div>
       </div>
       <div id="homework-two-intro" hidden>
-        <p class="homework-eyebrow">Homework 02</p>
-        <h1>PID Control Toolkit</h1>
-        <p class="homework-description">This section is ready. The PID modules have not been added yet.</p>
-        <button class="homework-back" id="back-to-homeworks" type="button">← Choose another homework</button>
+        <button class="homework-back p1-back" id="back-to-homeworks" type="button">← Choose another homework</button>
+        <p class="homework-eyebrow">Homework 02 · Control</p>
+        <h1 id="p1-page-title">P1 — PID Playground</h1>
+        <p class="homework-description">Explore a PID controller with first-order and second-order plants. This is the interface layout; the controls and simulations will be connected in the next steps.</p>
+        <div class="p1-preview-note">Interface preview — no PID simulation is running yet.</div>
+
+        <section class="p1-card" aria-labelledby="p1-settings-title">
+          <h2 id="p1-settings-title">Controller Settings</h2>
+          <div class="p1-controls">
+            <label class="p1-field" for="p1-plant">
+              Plant Model
+              <select id="p1-plant" disabled>
+                <option value="first-order">First-order plant</option>
+                <option value="second-order">Second-order plant</option>
+              </select>
+            </label>
+            <label class="p1-field" for="p1-setpoint">
+              Setpoint Step <span class="p1-value">1.0</span>
+              <input id="p1-setpoint" type="range" min="0" max="5" step="0.1" value="1" disabled>
+            </label>
+            <label class="p1-field" for="p1-kp">
+              Proportional Gain (Kp) <span class="p1-value">1.0</span>
+              <input id="p1-kp" type="range" min="0" max="20" step="0.1" value="1" disabled>
+            </label>
+            <label class="p1-field" for="p1-ki">
+              Integral Gain (Ki) <span class="p1-value">0.0</span>
+              <input id="p1-ki" type="range" min="0" max="20" step="0.1" value="0" disabled>
+            </label>
+            <label class="p1-field" for="p1-kd">
+              Derivative Gain (Kd) <span class="p1-value">0.0</span>
+              <input id="p1-kd" type="range" min="0" max="20" step="0.1" value="0" disabled>
+            </label>
+          </div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-diagram-title">
+          <h2 id="p1-diagram-title">Closed-Loop Block Diagram</h2>
+          <div class="p1-empty" id="p1-block-diagram">Feedback-loop diagram will appear here.</div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-response-title">
+          <h2 id="p1-response-title">Output vs. Setpoint</h2>
+          <div class="p1-plot-empty" id="p1-response-plot">Live response plot will appear here.</div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-control-title">
+          <h2 id="p1-control-title">Control Signal u(t) &amp; Limits</h2>
+          <div class="p1-plot-empty" id="p1-control-plot">Control signal and saturation limits will appear here.</div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-metrics-title">
+          <h2 id="p1-metrics-title">Performance Metrics</h2>
+          <div class="p1-metrics">
+            <div class="p1-metric"><span>Rise Time</span><strong id="p1-rise-time">—</strong></div>
+            <div class="p1-metric"><span>Overshoot</span><strong id="p1-overshoot">—</strong></div>
+            <div class="p1-metric"><span>Settling Time</span><strong id="p1-settling-time">—</strong></div>
+            <div class="p1-metric"><span>Steady-State Error</span><strong id="p1-steady-state-error">—</strong></div>
+          </div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-prediction-title">
+          <h2 id="p1-prediction-title">Predict, then Check</h2>
+          <p class="p1-secondary">Prediction questions and feedback will be added when the simulator is ready.</p>
+          <select class="p1-prediction" aria-label="Prediction" disabled>
+            <option>Choose a prediction</option>
+          </select>
+        </section>
       </div>
     </div>
   </div>
@@ -2258,6 +2395,9 @@ draw3();
   const homeworkSwitch = document.getElementById('homework-switch');
 
   function showHomeworkChoices() {
+    homeworkEntry.classList.remove('showing-p1');
+    homeworkEntry.setAttribute('aria-labelledby', 'homework-entry-title');
+    homeworkEntry.scrollTop = 0;
     homeworkEntry.hidden = false;
     homeworkChoices.hidden = false;
     homeworkTwoIntro.hidden = true;
@@ -2275,6 +2415,9 @@ draw3();
   document.getElementById('open-homework-2').addEventListener('click', () => {
     homeworkChoices.hidden = true;
     homeworkTwoIntro.hidden = false;
+    homeworkEntry.classList.add('showing-p1');
+    homeworkEntry.setAttribute('aria-labelledby', 'p1-page-title');
+    homeworkEntry.scrollTop = 0;
   });
 
   document.getElementById('back-to-homeworks').addEventListener('click', showHomeworkChoices);
