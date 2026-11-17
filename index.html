@@ -8,6 +8,80 @@
 
 
 <style>
+
+  #homework-entry {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    background: #121212;
+  }
+  #homework-entry[hidden] { display: none; }
+  .homework-panel {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 720px;
+    padding: 36px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 18px;
+  }
+  .homework-eyebrow {
+    margin: 0 0 12px;
+    color: #61afef;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .homework-panel h1 { margin: 0 0 10px; color: #fff; font-size: 30px; }
+  .homework-description { color: #b0b0b0; margin: 0 0 28px; line-height: 1.6; }
+  .homework-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .homework-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 24px;
+    min-height: 178px;
+    text-align: left;
+    background: #252525;
+    color: #e0e0e0;
+    border: 1px solid #414141;
+    border-radius: 12px;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .homework-option:hover { border-color: #61afef; background: #2c3239; }
+  .homework-option:focus-visible, .homework-back:focus-visible {
+    outline: 2px solid #61afef;
+    outline-offset: 3px;
+  }
+  .homework-option-label { color: #61afef; font-size: 12px; font-weight: bold; letter-spacing: 1px; }
+  .homework-option strong { font-size: 21px; color: #fff; line-height: 1.35; }
+  .homework-option-detail { color: #b0b0b0; font-size: 14px; line-height: 1.5; }
+  .homework-back {
+    padding: 10px 16px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #252525;
+    color: #e0e0e0;
+    font: inherit;
+    cursor: pointer;
+  }
+  #homework-switch { margin-bottom: 18px; }
+  @media (max-width: 560px) {
+    .homework-panel { padding: 24px; }
+    .homework-panel h1 { font-size: 25px; }
+    .homework-options { grid-template-columns: 1fr; }
+    .homework-option { min-height: 0; }
+  }
   #module4Check:hover{
     background-color: #ccddec !important;
   }
@@ -21,6 +95,36 @@
 
 </head>
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
+
+
+  <div id="homework-entry" role="dialog" aria-modal="true" aria-labelledby="homework-entry-title">
+    <div class="homework-panel">
+      <div id="homework-choices">
+        <p class="homework-eyebrow">ENCS4380 · Interfacing Techniques</p>
+        <h1 id="homework-entry-title">Choose a homework</h1>
+        <p class="homework-description">Select the toolkit you want to explore.</p>
+        <div class="homework-options">
+          <button class="homework-option" id="open-homework-1" type="button">
+            <span class="homework-option-label">HOMEWORK 01</span>
+            <strong>Dynamic Characteristics</strong>
+            <span class="homework-option-detail">First-order and second-order systems</span>
+          </button>
+          <button class="homework-option" id="open-homework-2" type="button">
+            <span class="homework-option-label">HOMEWORK 02</span>
+            <strong>PID Control Toolkit</strong>
+            <span class="homework-option-detail">Control modules coming soon</span>
+          </button>
+        </div>
+      </div>
+      <div id="homework-two-intro" hidden>
+        <p class="homework-eyebrow">Homework 02</p>
+        <h1>PID Control Toolkit</h1>
+        <p class="homework-description">This section is ready. The PID modules have not been added yet.</p>
+        <button class="homework-back" id="back-to-homeworks" type="button">← Choose another homework</button>
+      </div>
+    </div>
+  </div>
+  <button class="homework-back" id="homework-switch" type="button" hidden>← Choose another homework</button>
 
   <div style="text-align: center; background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 18px; line-height: 1.7;">
     <strong style="color: #ffffff;">Team Members:</strong>
@@ -2145,6 +2249,37 @@ draw3();
     }
     module4HintButton.addEventListener('click', showModule4Hint);
   </script>
+
+
+<script>
+  const homeworkEntry = document.getElementById('homework-entry');
+  const homeworkChoices = document.getElementById('homework-choices');
+  const homeworkTwoIntro = document.getElementById('homework-two-intro');
+  const homeworkSwitch = document.getElementById('homework-switch');
+
+  function showHomeworkChoices() {
+    homeworkEntry.hidden = false;
+    homeworkChoices.hidden = false;
+    homeworkTwoIntro.hidden = true;
+    homeworkSwitch.hidden = true;
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById('open-homework-1').addEventListener('click', () => {
+    homeworkEntry.hidden = true;
+    homeworkSwitch.hidden = false;
+    window.scrollTo(0, 0);
+    window.dispatchEvent(new Event('resize'));
+  });
+
+  document.getElementById('open-homework-2').addEventListener('click', () => {
+    homeworkChoices.hidden = true;
+    homeworkTwoIntro.hidden = false;
+  });
+
+  document.getElementById('back-to-homeworks').addEventListener('click', showHomeworkChoices);
+  homeworkSwitch.addEventListener('click', showHomeworkChoices);
+</script>
 
 </body>
 
