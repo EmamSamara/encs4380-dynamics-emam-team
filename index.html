@@ -156,6 +156,23 @@
   .p1-field input { width: 100%; margin: 2px 0; accent-color: #61afef; }
   .p1-field input:disabled { opacity: 0.7; }
   .p1-value { color: #61afef; font-weight: bold; }
+  .p1-limit-setting {
+    margin-top: 18px;
+    padding: 14px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+  }
+  .p1-limit-setting label { display: block; color: #e0e0e0; font-size: 14px; }
+  .p1-limit-setting strong { color: #61afef; }
+  .p1-limit-setting input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 12px 0;
+    accent-color: #61afef;
+  }
+  .p1-limit-setting p { color: #b0b0b0; font-size: 13px; margin: 0; }
   .p1-live-preview {
     display: flex;
     align-items: center;
@@ -296,6 +313,11 @@
               <input id="p1-kd" type="range" min="0" max="20" step="0.1" value="0">
             </label>
           </div>
+          <div class="p1-limit-setting">
+            <label for="p1-control-limit">Control Signal Limit (±u): <strong id="p1-limit-value">10.0</strong></label>
+            <input id="p1-control-limit" type="range" min="1" max="20" step="0.5" value="10">
+            <p>The controller output is limited to −10.0 to +10.0.</p>
+          </div>
           <div class="p1-live-preview" role="status" aria-live="polite">
             <span id="p1-live-output-label">First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = 1.0)</span>
             <strong id="p1-live-output">—</strong>
@@ -314,7 +336,7 @@
 
         <section class="p1-card" aria-labelledby="p1-control-title">
           <h2 id="p1-control-title">Control Signal u(t) &amp; Limits</h2>
-          <div class="p1-plot-empty" id="p1-control-plot">Control signal and saturation limits will appear here.</div>
+          <div class="p1-response-chart" id="p1-control-plot" role="img" aria-label="PID control signal with upper and lower saturation limits"></div>
         </section>
 
         <section class="p1-card" aria-labelledby="p1-metrics-title">
@@ -2547,6 +2569,7 @@ function simulateFirstOrderClosedLoop(options = {}) {
 let p1LatestSimulation = null;
 const p1GainSliders = ['p1-kp', 'p1-ki', 'p1-kd'];
 const p1SetpointSlider = document.getElementById('p1-setpoint');
+const p1ControlLimitSlider = document.getElementById('p1-control-limit');
 
 function renderP1ResponsePlot() {
   if (!p1LatestSimulation || typeof Plotly === 'undefined') return;
@@ -2583,6 +2606,52 @@ function renderP1ResponsePlot() {
   }, { responsive: true, displaylogo: false, displayModeBar: false });
 }
 
+function renderP1ControlPlot() {
+  if (!p1LatestSimulation || typeof Plotly === 'undefined') return;
+
+  const limit = Number(p1ControlLimitSlider.value);
+  const times = p1LatestSimulation.time;
+  Plotly.react('p1-control-plot', [
+    {
+      x: times,
+      y: p1LatestSimulation.control,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Control u(t)',
+      line: { color: '#61afef', width: 3 },
+      hovertemplate: 't = %{x:.2f} s<br>u = %{y:.3f}<extra></extra>'
+    },
+    {
+      x: [0, times[times.length - 1]],
+      y: [limit, limit],
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Upper limit',
+      line: { color: '#e5c07b', width: 2, dash: 'dash' },
+      hoverinfo: 'skip'
+    },
+    {
+      x: [0, times[times.length - 1]],
+      y: [-limit, -limit],
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Lower limit',
+      line: { color: '#e06c75', width: 2, dash: 'dash' },
+      hoverinfo: 'skip'
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0', size: 12 },
+    xaxis: { title: 'Time (s)', gridcolor: '#333', zerolinecolor: '#555' },
+    yaxis: { title: 'Control Signal u(t)', gridcolor: '#333', zerolinecolor: '#555', automargin: true },
+    margin: { t: 18, r: 16, b: 92, l: 64 },
+    legend: { orientation: 'h', x: 0, y: -0.3 },
+    hovermode: 'x unified',
+    autosize: true
+  }, { responsive: true, displaylogo: false, displayModeBar: false });
+}
+
 function updateP1Gains() {
   const gains = {};
   p1GainSliders.forEach(id => {
@@ -2592,7 +2661,11 @@ function updateP1Gains() {
     gains[id.slice(3)] = value;
   });
   const setpoint = Number(p1SetpointSlider.value);
+  const controlLimit = Number(p1ControlLimitSlider.value);
   document.querySelector('label[for="p1-setpoint"] .p1-value').textContent = setpoint.toFixed(1);
+  document.getElementById('p1-limit-value').textContent = controlLimit.toFixed(1);
+  document.querySelector('.p1-limit-setting p').textContent =
+    'The controller output is limited to −' + controlLimit.toFixed(1) + ' to +' + controlLimit.toFixed(1) + '.';
   p1LatestSimulation = simulateFirstOrderClosedLoop({
     gain: 1,
     tau: 1,
@@ -2600,19 +2673,25 @@ function updateP1Gains() {
     ki: gains.ki,
     kd: gains.kd,
     setpoint,
+    controlMin: -controlLimit,
+    controlMax: controlLimit,
     duration: 5
   });
   document.getElementById('p1-live-output-label').textContent =
     'First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = ' + setpoint.toFixed(1) + ')';
   document.getElementById('p1-live-output').textContent =
     p1LatestSimulation.output[p1LatestSimulation.output.length - 1].toFixed(3);
-  if (!document.getElementById('homework-two-intro').hidden) renderP1ResponsePlot();
+  if (!document.getElementById('homework-two-intro').hidden) {
+    renderP1ResponsePlot();
+    renderP1ControlPlot();
+  }
 }
 
 p1GainSliders.forEach(id =>
   document.getElementById(id).addEventListener('input', updateP1Gains)
 );
 p1SetpointSlider.addEventListener('input', updateP1Gains);
+p1ControlLimitSlider.addEventListener('input', updateP1Gains);
 updateP1Gains();
 </script>
 
@@ -2647,6 +2726,7 @@ updateP1Gains();
     homeworkEntry.setAttribute('aria-labelledby', 'p1-page-title');
     homeworkEntry.scrollTop = 0;
     renderP1ResponsePlot();
+    renderP1ControlPlot();
   });
 
   document.getElementById('back-to-homeworks').addEventListener('click', showHomeworkChoices);
