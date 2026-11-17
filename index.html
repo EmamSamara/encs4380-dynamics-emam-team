@@ -237,6 +237,45 @@
   .p1-metric span { color: #b0b0b0; font-size: 12px; }
   .p1-metric strong { color: #61afef; font-size: 20px; overflow-wrap: anywhere; }
   .p1-metrics-note { margin: 15px 0 0; color: #b0b0b0; font-size: 12px; line-height: 1.6; }
+  .p1-prediction-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .p1-prediction-controls label { display: flex; flex-direction: column; gap: 9px; color: #e0e0e0; font-size: 14px; }
+  .p1-prediction-controls select { min-width: 0; }
+  .p1-action-button {
+    margin-top: 15px;
+    padding: 11px 16px;
+    border: 1px solid #61afef;
+    border-radius: 8px;
+    color: #fff;
+    background: #294a64;
+    cursor: pointer;
+    font: inherit;
+  }
+  .p1-action-button:hover { background: #356181; }
+  .p1-action-button:focus-visible { outline: 2px solid #98c379; outline-offset: 3px; }
+  .p1-feedback {
+    min-height: 22px;
+    margin: 14px 0 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #454545;
+    color: #d0d0d0;
+    background: #1e1e1e;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+  .p1-feedback[data-result="correct"], .p1-feedback[data-result="pass"] { border-color: #98c379; color: #b5dfa6; }
+  .p1-feedback[data-result="incorrect"], .p1-feedback[data-result="fail"] { border-color: #e5c07b; color: #e5c07b; }
+  .p1-validation-panel {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+  }
+  .p1-validation-panel h3 { margin: 0 0 12px; color: #fff; font-size: 17px; line-height: 1.5; }
+  .p1-validation-results { font-family: inherit; }
+  @media (max-width: 560px) {
+    .p1-prediction-controls { grid-template-columns: 1fr; }
+  }
   .p1-secondary { color: #b0b0b0; font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
   @media (max-width: 560px) {
     #homework-entry { padding: 12px; }
@@ -423,10 +462,34 @@
 
         <section class="p1-card" aria-labelledby="p1-prediction-title">
           <h2 id="p1-prediction-title">Predict, then Check</h2>
-          <p class="p1-secondary">Prediction questions and feedback will be added when the simulator is ready.</p>
-          <select class="p1-prediction" aria-label="Prediction" disabled>
-            <option>Choose a prediction</option>
-          </select>
+          <p class="p1-secondary">Choose a change, predict the result, then run two simulations to check your answer. The main controls will switch to the new settings so you can explore the plots.</p>
+          <div class="p1-prediction-controls">
+            <label for="p1-prediction-scenario">What will you change?
+              <select id="p1-prediction-scenario" class="p1-prediction">
+                <option value="gain">First-order: increase Kp from 1 to 9. What happens to steady-state error?</option>
+                <option value="integral">First-order: add Ki = 1 (Kp = 1). What happens to steady-state error?</option>
+                <option value="derivative">Second-order: increase Kd from 0 to 2 (Kp = 3). What happens to overshoot?</option>
+                <option value="setpoint">First-order: increase setpoint from 1 to 2 (Kp = 2). What happens to output?</option>
+              </select>
+            </label>
+            <label for="p1-prediction-answer">Your prediction
+              <select id="p1-prediction-answer" class="p1-prediction">
+                <option value="">Choose an answer</option>
+                <option value="increase">It will increase</option>
+                <option value="decrease">It will decrease</option>
+                <option value="same">It will stay about the same</option>
+              </select>
+            </label>
+          </div>
+          <button id="p1-check-prediction" class="p1-action-button" type="button">Check with simulation</button>
+          <p id="p1-prediction-feedback" class="p1-feedback" role="status" aria-live="polite">Select your prediction before checking.</p>
+
+          <div class="p1-validation-panel">
+            <h3>Reference Validation — G(s) = 1 / (s + 1)</h3>
+            <p class="p1-secondary">Run two fixed numerical checks: P-only with Kp = 9, and PI with Kp = 1, Ki = 1. These checks do not change the current playground sliders.</p>
+            <button id="p1-run-validation" class="p1-action-button" type="button">Run P and PI validation</button>
+            <div id="p1-validation-results" class="p1-feedback p1-validation-results" role="status" aria-live="polite">Validation has not been run.</div>
+          </div>
         </section>
       </div>
     </div>
@@ -2950,6 +3013,158 @@ p1SetpointSlider.addEventListener('input', updateP1Gains);
 p1ControlLimitSlider.addEventListener('input', updateP1Gains);
 p1PlantSelector.addEventListener('change', updateP1Gains);
 updateP1Gains();
+
+const p1PredictionCases = {
+  gain: {
+    before: { plant: 'first-order', kp: 1, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'first-order', kp: 9, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    metric: 'error',
+    label: 'Step error at 12 s',
+    unit: '%'
+  },
+  integral: {
+    before: { plant: 'first-order', kp: 1, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'first-order', kp: 1, ki: 1, kd: 0, setpoint: 1, limit: 10 },
+    metric: 'error',
+    label: 'Step error at 12 s',
+    unit: '%'
+  },
+  derivative: {
+    before: { plant: 'second-order', kp: 3, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'second-order', kp: 3, ki: 0, kd: 2, setpoint: 1, limit: 10 },
+    metric: 'overshoot',
+    label: 'Overshoot above expected final output',
+    unit: '%'
+  },
+  setpoint: {
+    before: { plant: 'first-order', kp: 2, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'first-order', kp: 2, ki: 0, kd: 0, setpoint: 2, limit: 10 },
+    metric: 'output',
+    label: 'Output at 12 s',
+    unit: ''
+  }
+};
+
+function p1RunPredictionCase(settings) {
+  const inputs = {
+    kp: settings.kp,
+    ki: settings.ki,
+    kd: settings.kd,
+    setpoint: settings.setpoint,
+    controlMin: -settings.limit,
+    controlMax: settings.limit,
+    duration: 12
+  };
+  return settings.plant === 'first-order'
+    ? simulateFirstOrderClosedLoop({ gain: 1, tau: 1, ...inputs })
+    : simulateSecondOrderClosedLoop({ mass: 1, damping: 2, stiffness: 4, ...inputs });
+}
+
+function p1GetPredictionValue(simulation, settings, metric) {
+  if (metric === 'output') return simulation.output[simulation.output.length - 1];
+  if (metric === 'error') {
+    return Math.abs(settings.setpoint - simulation.output[simulation.output.length - 1]) /
+      Math.abs(settings.setpoint) * 100;
+  }
+  const finalValue = p1SteadyStateValue(settings.kp, settings.ki,
+    settings.setpoint, settings.limit, 1);
+  const peak = Math.max(...simulation.output);
+  return finalValue > 0 ? Math.max(0, (peak - finalValue) / finalValue * 100) : 0;
+}
+
+function p1CheckPrediction() {
+  const key = document.getElementById('p1-prediction-scenario').value;
+  const answer = document.getElementById('p1-prediction-answer').value;
+  const feedback = document.getElementById('p1-prediction-feedback');
+  if (!answer) {
+    feedback.textContent = 'Choose Increase, Decrease, or Stay the same before checking.';
+    feedback.removeAttribute('data-result');
+    return;
+  }
+
+  const scenario = p1PredictionCases[key];
+  const before = p1GetPredictionValue(p1RunPredictionCase(scenario.before),
+    scenario.before, scenario.metric);
+  const after = p1GetPredictionValue(p1RunPredictionCase(scenario.after),
+    scenario.after, scenario.metric);
+  const difference = after - before;
+  const actual = Math.abs(difference) < 0.05 ? 'same' : difference > 0 ? 'increase' : 'decrease';
+  const correct = actual === answer;
+  feedback.dataset.result = correct ? 'correct' : 'incorrect';
+  feedback.textContent = (correct ? 'Correct prediction! ' : 'Not quite. ') +
+    scenario.label + ': ' + before.toFixed(2) + scenario.unit + ' → ' +
+    after.toFixed(2) + scenario.unit + '. It ' +
+    (actual === 'same' ? 'stays about the same.' : actual === 'increase' ? 'increases.' : 'decreases.') +
+    ' The main controls now show the second case.';
+
+  const next = scenario.after;
+  document.getElementById('p1-plant').value = next.plant;
+  document.getElementById('p1-kp').value = next.kp;
+  document.getElementById('p1-ki').value = next.ki;
+  document.getElementById('p1-kd').value = next.kd;
+  document.getElementById('p1-setpoint').value = next.setpoint;
+  document.getElementById('p1-control-limit').value = next.limit;
+  updateP1Gains();
+}
+
+function p1CrossingTime(time, values, threshold) {
+  for (let i = 1; i < time.length; i++) {
+    if (values[i - 1] <= threshold && values[i] >= threshold &&
+        values[i] !== values[i - 1]) {
+      return time[i - 1] + (threshold - values[i - 1]) /
+        (values[i] - values[i - 1]) * (time[i] - time[i - 1]);
+    }
+  }
+  return null;
+}
+
+function p1RunReferenceValidation() {
+  const p = simulateFirstOrderClosedLoop({
+    gain: 1, tau: 1, kp: 9, ki: 0, kd: 0, setpoint: 1,
+    duration: 2, timeStep: 0.002, controlMin: -10, controlMax: 10
+  });
+  const pFinal = p.output[p.output.length - 1];
+  const pExpectedFinal = 0.9;
+  const pExpectedTau = 0.1;
+  const pTau = p1CrossingTime(p.time, p.output, pExpectedFinal * (1 - Math.exp(-1)));
+  const pPassed = pTau !== null && Math.abs(pTau - pExpectedTau) < 0.002 &&
+    Math.abs(pFinal - pExpectedFinal) < 0.001;
+  const pError = (1 - pFinal) * 100;
+
+  const pi = simulateFirstOrderClosedLoop({
+    gain: 1, tau: 1, kp: 1, ki: 1, kd: 0, setpoint: 1,
+    duration: 12, timeStep: 0.005, controlMin: -10, controlMax: 10
+  });
+  const piFinal = pi.output[pi.output.length - 1];
+  const piFrequency = Math.sqrt(1);
+  const piDamping = (1 + 1) / (2 * piFrequency);
+  const piError = Math.abs(1 - piFinal) * 100;
+  const piPassed = Math.abs(piFinal - (1 - Math.exp(-12))) < 0.0001 &&
+    piError < 0.01 && piFrequency === 1 && piDamping === 1;
+
+  const results = document.getElementById('p1-validation-results');
+  results.dataset.result = pPassed && piPassed ? 'pass' : 'fail';
+  results.textContent =
+    'P-only (Kp = 9): ' + (pPassed ? 'PASS' : 'CHECK') +
+    ' | τcl = ' + (pTau === null ? 'N/A' : pTau.toFixed(3)) +
+    ' s (expected 0.100 s), final output = ' + pFinal.toFixed(4) +
+    ' (expected 0.9000), step error = ' + pError.toFixed(2) + '% (expected 10%).' +
+    '\nPI (Kp = 1, Ki = 1): ' + (piPassed ? 'PASS' : 'CHECK') +
+    ' | ωn = ' + piFrequency.toFixed(1) + ' rad/s, ζ = ' + piDamping.toFixed(1) +
+    ', output at 12 s = ' + piFinal.toFixed(6) +
+    ', error at 12 s = ' + piError.toFixed(4) +
+    '%. The theoretical step steady-state error is 0%.';
+}
+
+document.getElementById('p1-check-prediction').addEventListener('click', p1CheckPrediction);
+document.getElementById('p1-run-validation').addEventListener('click', p1RunReferenceValidation);
+document.getElementById('p1-prediction-scenario').addEventListener('change', () => {
+  const feedback = document.getElementById('p1-prediction-feedback');
+  feedback.removeAttribute('data-result');
+  feedback.textContent = 'Select your prediction before checking.';
+  document.getElementById('p1-prediction-answer').value = '';
+});
+
 </script>
 
 <script>
