@@ -8,6 +8,43 @@
 
 
 <style>
+  .team-profiles {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 14px 12px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .team-profiles-title {
+    display: block;
+    margin-bottom: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .team-profiles-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .team-profiles-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    min-width: 100%;
+    width: max-content;
+    white-space: nowrap;
+    padding: 0 2px 5px;
+  }
+  .team-profiles-links a {
+    color: #61afef;
+    text-decoration: underline;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
 
   #homework-entry {
     position: fixed;
@@ -189,9 +226,17 @@
             <span class="homework-option-detail">Control modules coming soon</span>
           </button>
         </div>
-  <div style="text-align: center; background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 24px; margin-bottom: 0; line-height: 1.7;">
-    <strong style="color: #ffffff;">Team Members:</strong>
-    <span><a href="https://github.com/EmamSamara" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Emam Samara</a> · <a href="https://github.com/OmarKhaldi1465" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Omar Khaldi</a> · <a href="https://github.com/Fawzy-AbuKwaik" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a> · <a href="https://github.com/mustafa-fayed403" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">mustafa-fayed</a> · <a href="https://github.com/israa-masalmeh" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a></span>
+  <div class="team-profiles" style="margin-top: 24px; margin-bottom: 0;">
+    <strong class="team-profiles-title">Team Members GitHub Profiles</strong>
+    <div class="team-profiles-scroll">
+      <div class="team-profiles-links">
+        <a href="https://github.com/EmamSamara" target="_blank" rel="noopener noreferrer">Emam Samara</a>
+        <a href="https://github.com/OmarKhaldi1465" target="_blank" rel="noopener noreferrer">Omar Khaldi</a>
+        <a href="https://github.com/Fawzy-AbuKwaik" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a>
+        <a href="https://github.com/mustafa-fayed403" target="_blank" rel="noopener noreferrer">mustafa-fayed</a>
+        <a href="https://github.com/israa-masalmeh" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a>
+      </div>
+    </div>
   </div>
       </div>
       <div id="homework-two-intro" hidden>
@@ -267,9 +312,17 @@
   </div>
   <button class="homework-back" id="homework-switch" type="button" hidden>← Choose another homework</button>
 
-  <div style="text-align: center; background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 18px; line-height: 1.7;">
-    <strong style="color: #ffffff;">Team Members:</strong>
-    <span><a href="https://github.com/EmamSamara" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Emam Samara</a> · <a href="https://github.com/OmarKhaldi1465" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Omar Khaldi</a> · <a href="https://github.com/Fawzy-AbuKwaik" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a> · <a href="https://github.com/mustafa-fayed403" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">mustafa-fayed</a> · <a href="https://github.com/israa-masalmeh" style="color: #61afef; text-decoration: underline;" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a></span>
+  <div class="team-profiles" style="margin-bottom: 18px;">
+    <strong class="team-profiles-title">Team Members GitHub Profiles</strong>
+    <div class="team-profiles-scroll">
+      <div class="team-profiles-links">
+        <a href="https://github.com/EmamSamara" target="_blank" rel="noopener noreferrer">Emam Samara</a>
+        <a href="https://github.com/OmarKhaldi1465" target="_blank" rel="noopener noreferrer">Omar Khaldi</a>
+        <a href="https://github.com/Fawzy-AbuKwaik" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a>
+        <a href="https://github.com/mustafa-fayed403" target="_blank" rel="noopener noreferrer">mustafa-fayed</a>
+        <a href="https://github.com/israa-masalmeh" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a>
+      </div>
+    </div>
   </div>
 
   <h1 style="color: #ffffff;">Module 1: First-Order Time Response</h1>
