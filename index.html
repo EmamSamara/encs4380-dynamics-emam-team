@@ -224,7 +224,8 @@
     background: #1e1e1e;
   }
   .p1-metric span { color: #b0b0b0; font-size: 12px; }
-  .p1-metric strong { color: #61afef; font-size: 22px; }
+  .p1-metric strong { color: #61afef; font-size: 20px; overflow-wrap: anywhere; }
+  .p1-metrics-note { margin: 15px 0 0; color: #b0b0b0; font-size: 12px; line-height: 1.6; }
   .p1-secondary { color: #b0b0b0; font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
   @media (max-width: 560px) {
     #homework-entry { padding: 12px; }
@@ -349,6 +350,7 @@
             <div class="p1-metric"><span>Settling Time</span><strong id="p1-settling-time">—</strong></div>
             <div class="p1-metric"><span>Steady-State Error</span><strong id="p1-steady-state-error">—</strong></div>
           </div>
+          <p class="p1-metrics-note">Rise Time: 10–90% of the expected final output. Settling Time: within ±5%. Overshoot is observed over 5 s. Steady-State Error is based on the predicted final value and the control limit.</p>
         </section>
 
         <section class="p1-card" aria-labelledby="p1-prediction-title">
@@ -2650,6 +2652,70 @@ function simulateSecondOrderClosedLoop(options = {}) {
 
   return { time, output, reference, control, error };
 }
+function p1SteadyStateValue(kp, ki, setpoint, controlLimit, plantGain) {
+  const equilibrium = ki > 0
+    ? setpoint
+    : (plantGain * kp * setpoint) / (1 + plantGain * kp);
+  const bound = plantGain * controlLimit;
+  return Math.max(-bound, Math.min(bound, equilibrium));
+}
+
+function calculateP1PerformanceMetrics(simulation, target, setpoint) {
+  const { time, output } = simulation;
+  if (!time || !output || time.length < 2 || time.length !== output.length) {
+    throw new Error('Invalid simulation data for performance metrics.');
+  }
+
+  const start = output[0];
+  const step = target - start;
+  const magnitude = Math.abs(step);
+  const direction = Math.sign(step);
+  const lastIndex = output.length - 1;
+
+  const crossingTime = (fraction) => {
+    const threshold = fraction * magnitude;
+    for (let i = 1; i <= lastIndex; i++) {
+      const before = direction * (output[i - 1] - start);
+      const after = direction * (output[i] - start);
+      if (before < threshold && after >= threshold) {
+        const ratio = (threshold - before) / (after - before);
+        return time[i - 1] + ratio * (time[i] - time[i - 1]);
+      }
+    }
+    return null;
+  };
+
+  const startTime = magnitude > 1e-12 ? crossingTime(0.1) : null;
+  const finishTime = magnitude > 1e-12 ? crossingTime(0.9) : null;
+  const riseTime = startTime !== null && finishTime !== null
+    ? finishTime - startTime : null;
+
+  const peak = direction === 0 ? 0
+    : Math.max(0, ...output.map(value => direction * (value - target)));
+  const overshoot = magnitude > 1e-12 ? (peak / magnitude) * 100 : 0;
+
+  const band = Math.max(magnitude * 0.05, 1e-9);
+  let lastOutside = -1;
+  for (let i = 0; i <= lastIndex; i++) {
+    if (Math.abs(output[i] - target) > band) lastOutside = i;
+  }
+  let settlingTime = null;
+  if (lastOutside === -1) {
+    settlingTime = 0;
+  } else if (lastOutside < lastIndex) {
+    const previous = output[lastOutside];
+    const next = output[lastOutside + 1];
+    const edge = previous > target ? target + band : target - band;
+    settlingTime = time[lastOutside] +
+      ((edge - previous) / (next - previous)) * (time[lastOutside + 1] - time[lastOutside]);
+  }
+
+  const steadyStateError = Math.abs(setpoint - target);
+  const steadyStateErrorPercent = Math.abs(setpoint) > 1e-12
+    ? (steadyStateError / Math.abs(setpoint)) * 100 : 0;
+  return { riseTime, overshoot, settlingTime, steadyStateError, steadyStateErrorPercent };
+}
+
 let p1LatestSimulation = null;
 const p1GainSliders = ['p1-kp', 'p1-ki', 'p1-kd'];
 const p1SetpointSlider = document.getElementById('p1-setpoint');
@@ -2772,6 +2838,17 @@ function updateP1Gains() {
     ' simulated output at 5 s (setpoint = ' + setpoint.toFixed(1) + ')';
   document.getElementById('p1-live-output').textContent =
     p1LatestSimulation.output[p1LatestSimulation.output.length - 1].toFixed(3);
+
+  const target = p1SteadyStateValue(gains.kp, gains.ki, setpoint, controlLimit, 1);
+  const metrics = calculateP1PerformanceMetrics(p1LatestSimulation, target, setpoint);
+  document.getElementById('p1-rise-time').textContent = metrics.riseTime === null
+    ? 'Not reached' : metrics.riseTime.toFixed(2) + ' s';
+  document.getElementById('p1-overshoot').textContent = metrics.overshoot.toFixed(1) + '%';
+  document.getElementById('p1-settling-time').textContent = metrics.settlingTime === null
+    ? 'Not settled' : metrics.settlingTime.toFixed(2) + ' s';
+  document.getElementById('p1-steady-state-error').textContent =
+    metrics.steadyStateErrorPercent.toFixed(1) + '%';
+
   if (!document.getElementById('homework-two-intro').hidden) {
     renderP1ResponsePlot();
     renderP1ControlPlot();
