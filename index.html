@@ -185,6 +185,14 @@
   }
   .p1-empty { min-height: 104px; }
   .p1-plot-empty { min-height: 240px; }
+  .p1-response-chart {
+    box-sizing: border-box;
+    width: 100%;
+    height: 350px;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1e1e1e;
+  }
   .p1-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
   .p1-metric {
     display: flex;
@@ -206,6 +214,7 @@
     .p1-controls { grid-template-columns: 1fr; }
     .p1-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .p1-plot-empty { min-height: 210px; }
+    .p1-response-chart { height: 310px; }
   }
   #module4Check:hover{
     background-color: #ccddec !important;
@@ -258,7 +267,7 @@
         <p class="homework-eyebrow">Homework 02 · Control</p>
         <h1 id="p1-page-title">P1 — PID Playground</h1>
         <p class="homework-description">Explore a PID controller with first-order and second-order plants. Adjust the PID gains to see the first-order closed-loop response update.</p>
-        <div class="p1-preview-note">P, I and D gain controls are active. Interactive plots will be added in the next steps.</div>
+        <div class="p1-preview-note">P, I and D gain controls are active. The setpoint and PID gains now update the first-order response plot.</div>
 
         <section class="p1-card" aria-labelledby="p1-settings-title">
           <h2 id="p1-settings-title">Controller Settings</h2>
@@ -272,7 +281,7 @@
             </label>
             <label class="p1-field" for="p1-setpoint">
               Setpoint Step <span class="p1-value">1.0</span>
-              <input id="p1-setpoint" type="range" min="0" max="5" step="0.1" value="1" disabled>
+              <input id="p1-setpoint" type="range" min="0" max="5" step="0.1" value="1">
             </label>
             <label class="p1-field" for="p1-kp">
               Proportional Gain (Kp) <span class="p1-value">1.0</span>
@@ -288,7 +297,7 @@
             </label>
           </div>
           <div class="p1-live-preview" role="status" aria-live="polite">
-            <span>First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = 1)</span>
+            <span id="p1-live-output-label">First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = 1.0)</span>
             <strong id="p1-live-output">—</strong>
           </div>
         </section>
@@ -300,7 +309,7 @@
 
         <section class="p1-card" aria-labelledby="p1-response-title">
           <h2 id="p1-response-title">Output vs. Setpoint</h2>
-          <div class="p1-plot-empty" id="p1-response-plot">Live response plot will appear here.</div>
+          <div class="p1-response-chart" id="p1-response-plot" role="img" aria-label="First-order output and setpoint over time"></div>
         </section>
 
         <section class="p1-card" aria-labelledby="p1-control-title">
@@ -2537,6 +2546,42 @@ function simulateFirstOrderClosedLoop(options = {}) {
 }
 let p1LatestSimulation = null;
 const p1GainSliders = ['p1-kp', 'p1-ki', 'p1-kd'];
+const p1SetpointSlider = document.getElementById('p1-setpoint');
+
+function renderP1ResponsePlot() {
+  if (!p1LatestSimulation || typeof Plotly === 'undefined') return;
+
+  Plotly.react('p1-response-plot', [
+    {
+      x: p1LatestSimulation.time,
+      y: p1LatestSimulation.output,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Output y(t)',
+      line: { color: '#61afef', width: 3 },
+      hovertemplate: 't = %{x:.2f} s<br>Output = %{y:.3f}<extra></extra>'
+    },
+    {
+      x: p1LatestSimulation.time,
+      y: p1LatestSimulation.reference,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Setpoint',
+      line: { color: '#98c379', width: 2, dash: 'dash' },
+      hovertemplate: 't = %{x:.2f} s<br>Setpoint = %{y:.3f}<extra></extra>'
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0', size: 12 },
+    xaxis: { title: 'Time (s)', gridcolor: '#333', zerolinecolor: '#555' },
+    yaxis: { title: 'Response', gridcolor: '#333', zerolinecolor: '#555', automargin: true },
+    margin: { t: 18, r: 16, b: 92, l: 64 },
+    legend: { orientation: 'h', x: 0, y: -0.3 },
+    hovermode: 'x unified',
+    autosize: true
+  }, { responsive: true, displaylogo: false, displayModeBar: false });
+}
 
 function updateP1Gains() {
   const gains = {};
@@ -2546,22 +2591,28 @@ function updateP1Gains() {
     document.querySelector('label[for="' + id + '"] .p1-value').textContent = value.toFixed(1);
     gains[id.slice(3)] = value;
   });
+  const setpoint = Number(p1SetpointSlider.value);
+  document.querySelector('label[for="p1-setpoint"] .p1-value').textContent = setpoint.toFixed(1);
   p1LatestSimulation = simulateFirstOrderClosedLoop({
     gain: 1,
     tau: 1,
     kp: gains.kp,
     ki: gains.ki,
     kd: gains.kd,
-    setpoint: 1,
+    setpoint,
     duration: 5
   });
+  document.getElementById('p1-live-output-label').textContent =
+    'First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = ' + setpoint.toFixed(1) + ')';
   document.getElementById('p1-live-output').textContent =
     p1LatestSimulation.output[p1LatestSimulation.output.length - 1].toFixed(3);
+  if (!document.getElementById('homework-two-intro').hidden) renderP1ResponsePlot();
 }
 
 p1GainSliders.forEach(id =>
   document.getElementById(id).addEventListener('input', updateP1Gains)
 );
+p1SetpointSlider.addEventListener('input', updateP1Gains);
 updateP1Gains();
 </script>
 
@@ -2595,6 +2646,7 @@ updateP1Gains();
     homeworkEntry.classList.add('showing-p1');
     homeworkEntry.setAttribute('aria-labelledby', 'p1-page-title');
     homeworkEntry.scrollTop = 0;
+    renderP1ResponsePlot();
   });
 
   document.getElementById('back-to-homeworks').addEventListener('click', showHomeworkChoices);
