@@ -202,6 +202,17 @@
     font-size: 14px;
   }
   .p1-empty { min-height: 104px; }
+  .p1-diagram-scroll {
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1b1b1b;
+  }
+  .p1-diagram-scroll:focus-visible { outline: 2px solid #61afef; outline-offset: 3px; }
+  .p1-diagram-svg { display: block; width: 100%; min-width: 760px; height: auto; }
+  .p1-diagram-note { margin: 12px 0 0; color: #b0b0b0; font-size: 12px; line-height: 1.6; }
   .p1-plot-empty { min-height: 240px; }
   .p1-response-chart {
     box-sizing: border-box;
@@ -342,7 +353,51 @@
 
         <section class="p1-card" aria-labelledby="p1-diagram-title">
           <h2 id="p1-diagram-title">Closed-Loop Block Diagram</h2>
-          <div class="p1-empty" id="p1-block-diagram">Feedback-loop diagram will appear here.</div>
+          <div class="p1-diagram-scroll" id="p1-block-diagram" role="region" aria-label="PID closed-loop feedback diagram" tabindex="0">
+            <svg id="p1-diagram-svg" class="p1-diagram-svg" viewBox="0 0 980 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PID control loop with unity feedback">
+              <defs>
+                <marker id="p1-diagram-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#a6b9c8"/>
+                </marker>
+              </defs>
+              <g stroke="#a6b9c8" stroke-width="2.5" fill="none" stroke-linejoin="round">
+                <path d="M 130 133 H 161" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 207 133 H 250" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 466 133 H 513" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 655 133 H 703" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 900 133 H 962" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 934 133 V 255 H 184 V 156" marker-end="url(#p1-diagram-arrow)"/>
+              </g>
+              <g stroke-width="2" stroke-linejoin="round">
+                <rect x="18" y="88" width="112" height="90" rx="10" fill="#28323a" stroke="#61afef"/>
+                <circle cx="184" cy="133" r="23" fill="#252525" stroke="#98c379"/>
+                <rect x="250" y="88" width="216" height="90" rx="10" fill="#2c303b" stroke="#61afef"/>
+                <rect x="513" y="88" width="142" height="90" rx="10" fill="#373025" stroke="#e5c07b"/>
+                <rect x="703" y="88" width="197" height="90" rx="10" fill="#2a3530" stroke="#98c379"/>
+              </g>
+              <g fill="#f0f0f0" font-family="Arial, sans-serif" text-anchor="middle">
+                <text x="74" y="119" font-size="17" font-weight="bold">Setpoint</text>
+                <text id="p1-diagram-setpoint" x="74" y="149" font-size="19">r = 1.0</text>
+                <text x="184" y="140" font-size="26">Σ</text>
+                <text x="171" y="100" font-size="22" fill="#98c379">+</text>
+                <text x="161" y="191" font-size="26" fill="#e06c75">−</text>
+                <text x="231" y="117" font-size="17">e(t)</text>
+                <text x="358" y="117" font-size="18" font-weight="bold">PID Controller</text>
+                <text id="p1-diagram-proportional-integral" x="358" y="143" font-size="15">Kp = 1.0  ·  Ki = 0.0</text>
+                <text id="p1-diagram-derivative" x="358" y="165" font-size="15">Kd = 0.0</text>
+                <text x="489" y="117" font-size="15">u<tspan baseline-shift="sub" font-size="11">raw</tspan></text>
+                <text x="584" y="119" font-size="18" font-weight="bold">Saturation</text>
+                <text id="p1-diagram-limits" x="584" y="150" font-size="15">±10.0</text>
+                <text x="679" y="117" font-size="17">u(t)</text>
+                <text id="p1-diagram-plant" x="802" y="119" font-size="18" font-weight="bold">First-Order Plant</text>
+                <text id="p1-diagram-transfer" x="802" y="150" font-size="14">G(s) = 1 / (s + 1)</text>
+                <text x="948" y="108" font-size="17">y(t)</text>
+                <text x="555" y="285" font-size="16" fill="#b0b0b0">Unity feedback: measured output y(t)</text>
+              </g>
+              <circle cx="934" cy="133" r="4.5" fill="#a6b9c8"/>
+            </svg>
+          </div>
+          <p class="p1-diagram-note">The output is fed back to the summing junction with negative feedback. The D term uses the measured output derivative to avoid a setpoint kick.</p>
         </section>
 
         <section class="p1-card" aria-labelledby="p1-response-title">
@@ -2816,6 +2871,25 @@ function renderP1ControlPlot() {
   }, { responsive: true, displaylogo: false, displayModeBar: false });
 }
 
+function updateP1BlockDiagram(gains, setpoint, controlLimit, firstOrder) {
+  document.getElementById('p1-diagram-setpoint').textContent = 'r = ' + setpoint.toFixed(1);
+  document.getElementById('p1-diagram-proportional-integral').textContent =
+    'Kp = ' + gains.kp.toFixed(1) + '  ·  Ki = ' + gains.ki.toFixed(1);
+  document.getElementById('p1-diagram-derivative').textContent = 'Kd = ' + gains.kd.toFixed(1);
+  document.getElementById('p1-diagram-limits').textContent = '±' + controlLimit.toFixed(1);
+  document.getElementById('p1-diagram-plant').textContent =
+    firstOrder ? 'First-Order Plant' : 'Second-Order Plant';
+  document.getElementById('p1-diagram-transfer').textContent =
+    firstOrder ? 'G(s) = 1 / (s + 1)' : 'G(s) = 4 / (s² + 2s + 4)';
+  document.getElementById('p1-diagram-svg').setAttribute('aria-label',
+    'PID feedback control loop. Setpoint ' + setpoint.toFixed(1) +
+    '. Kp ' + gains.kp.toFixed(1) +
+    ', Ki ' + gains.ki.toFixed(1) +
+    ', Kd ' + gains.kd.toFixed(1) +
+    ', saturation plus or minus ' + controlLimit.toFixed(1) +
+    '. ' + (firstOrder ? 'First-order plant.' : 'Second-order plant.'));
+}
+
 function updateP1Gains() {
   const gains = {};
   p1GainSliders.forEach(id => {
@@ -2846,6 +2920,7 @@ function updateP1Gains() {
   document.getElementById('p1-model-description').textContent = firstOrder
     ? 'K = 1, τ = 1 s'
     : 'm = 1 kg, b = 2 N·s/m, k = 4 N/m (F = k·u)';
+  updateP1BlockDiagram(gains, setpoint, controlLimit, firstOrder);
   document.getElementById('p1-live-output-label').textContent =
     (firstOrder ? 'First-order' : 'Second-order') +
     ' simulated output at 5 s (setpoint = ' + setpoint.toFixed(1) + ')';
