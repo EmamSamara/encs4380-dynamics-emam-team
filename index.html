@@ -153,6 +153,7 @@
     font: inherit;
   }
   .p1-field select:disabled, .p1-prediction:disabled { opacity: 0.65; }
+  .p1-model-description { color: #b0b0b0; font-size: 12px; line-height: 1.5; }
   .p1-field input { width: 100%; margin: 2px 0; accent-color: #61afef; }
   .p1-field input:disabled { opacity: 0.7; }
   .p1-value { color: #61afef; font-weight: bold; }
@@ -284,17 +285,18 @@
         <p class="homework-eyebrow">Homework 02 · Control</p>
         <h1 id="p1-page-title">P1 — PID Playground</h1>
         <p class="homework-description">Explore a PID controller with first-order and second-order plants. Adjust the PID gains to see the first-order closed-loop response update.</p>
-        <div class="p1-preview-note">P, I and D gain controls are active. The setpoint and PID gains now update the first-order response plot.</div>
+        <div class="p1-preview-note">Switch between first-order and second-order plants. The PID gains, setpoint, and control limit update both plots.</div>
 
         <section class="p1-card" aria-labelledby="p1-settings-title">
           <h2 id="p1-settings-title">Controller Settings</h2>
           <div class="p1-controls">
             <label class="p1-field" for="p1-plant">
               Plant Model
-              <select id="p1-plant" disabled>
+              <select id="p1-plant">
                 <option value="first-order">First-order plant</option>
                 <option value="second-order">Second-order plant</option>
               </select>
+              <span class="p1-model-description" id="p1-model-description">K = 1, τ = 1 s</span>
             </label>
             <label class="p1-field" for="p1-setpoint">
               Setpoint Step <span class="p1-value">1.0</span>
@@ -331,7 +333,7 @@
 
         <section class="p1-card" aria-labelledby="p1-response-title">
           <h2 id="p1-response-title">Output vs. Setpoint</h2>
-          <div class="p1-response-chart" id="p1-response-plot" role="img" aria-label="First-order output and setpoint over time"></div>
+          <div class="p1-response-chart" id="p1-response-plot" role="img" aria-label="Closed-loop output and setpoint over time"></div>
         </section>
 
         <section class="p1-card" aria-labelledby="p1-control-title">
@@ -2566,10 +2568,93 @@ function simulateFirstOrderClosedLoop(options = {}) {
 
   return { time, output, reference, control, error };
 }
+function simulateSecondOrderClosedLoop(options = {}) {
+  const {
+    mass = 1,
+    damping = 2,
+    stiffness = 4,
+    kp = 1,
+    ki = 0,
+    kd = 0,
+    setpoint = 1,
+    duration = 5,
+    timeStep = 0.005,
+    initialOutput = 0,
+    initialVelocity = 0,
+    controlMin = -Infinity,
+    controlMax = Infinity
+  } = options;
+
+  if (![mass, damping, stiffness, kp, ki, kd, setpoint, duration, timeStep,
+         initialOutput, initialVelocity].every(Number.isFinite) ||
+      mass <= 0 || damping <= 0 || stiffness <= 0 ||
+      kp < 0 || ki < 0 || kd < 0 || duration <= 0 || timeStep <= 0) {
+    throw new Error('Invalid second-order plant or controller parameters.');
+  }
+  if (typeof controlMin !== 'number' || Number.isNaN(controlMin) ||
+      typeof controlMax !== 'number' || Number.isNaN(controlMax) ||
+      controlMin > controlMax) {
+    throw new Error('Invalid control limits.');
+  }
+
+  const steps = Math.ceil(duration / timeStep);
+  if (steps > 20000) {
+    throw new Error('The simulation has too many time steps.');
+  }
+
+  const dt = duration / steps;
+  const time = [];
+  const output = [];
+  const reference = [];
+  const control = [];
+  const error = [];
+  let y = initialOutput;
+  let velocity = initialVelocity;
+  let integral = 0;
+
+  const getControl = (position, speed, accumulatedError) =>
+    Math.max(controlMin, Math.min(controlMax,
+      kp * (setpoint - position) + ki * accumulatedError - kd * speed));
+
+  const derivative = (position, speed, accumulatedError) => ({
+    dy: speed,
+    dv: (stiffness * getControl(position, speed, accumulatedError) -
+         damping * speed - stiffness * position) / mass,
+    di: setpoint - position
+  });
+
+  for (let i = 0; i <= steps; i++) {
+    time.push(i * dt);
+    output.push(y);
+    reference.push(setpoint);
+    error.push(setpoint - y);
+    control.push(getControl(y, velocity, integral));
+
+    if (i === steps) break;
+
+    const k1 = derivative(y, velocity, integral);
+    const k2 = derivative(y + dt * k1.dy / 2,
+      velocity + dt * k1.dv / 2, integral + dt * k1.di / 2);
+    const k3 = derivative(y + dt * k2.dy / 2,
+      velocity + dt * k2.dv / 2, integral + dt * k2.di / 2);
+    const k4 = derivative(y + dt * k3.dy,
+      velocity + dt * k3.dv, integral + dt * k3.di);
+
+    y += dt * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy) / 6;
+    velocity += dt * (k1.dv + 2 * k2.dv + 2 * k3.dv + k4.dv) / 6;
+    integral += dt * (k1.di + 2 * k2.di + 2 * k3.di + k4.di) / 6;
+    if (![y, velocity, integral].every(Number.isFinite)) {
+      throw new Error('The simulation became unstable.');
+    }
+  }
+
+  return { time, output, reference, control, error };
+}
 let p1LatestSimulation = null;
 const p1GainSliders = ['p1-kp', 'p1-ki', 'p1-kd'];
 const p1SetpointSlider = document.getElementById('p1-setpoint');
 const p1ControlLimitSlider = document.getElementById('p1-control-limit');
+const p1PlantSelector = document.getElementById('p1-plant');
 
 function renderP1ResponsePlot() {
   if (!p1LatestSimulation || typeof Plotly === 'undefined') return;
@@ -2666,9 +2751,8 @@ function updateP1Gains() {
   document.getElementById('p1-limit-value').textContent = controlLimit.toFixed(1);
   document.querySelector('.p1-limit-setting p').textContent =
     'The controller output is limited to −' + controlLimit.toFixed(1) + ' to +' + controlLimit.toFixed(1) + '.';
-  p1LatestSimulation = simulateFirstOrderClosedLoop({
-    gain: 1,
-    tau: 1,
+  const firstOrder = p1PlantSelector.value === 'first-order';
+  const controller = {
     kp: gains.kp,
     ki: gains.ki,
     kd: gains.kd,
@@ -2676,9 +2760,16 @@ function updateP1Gains() {
     controlMin: -controlLimit,
     controlMax: controlLimit,
     duration: 5
-  });
+  };
+  p1LatestSimulation = firstOrder
+    ? simulateFirstOrderClosedLoop({ gain: 1, tau: 1, ...controller })
+    : simulateSecondOrderClosedLoop({ mass: 1, damping: 2, stiffness: 4, ...controller });
+  document.getElementById('p1-model-description').textContent = firstOrder
+    ? 'K = 1, τ = 1 s'
+    : 'm = 1 kg, b = 2 N·s/m, k = 4 N/m (F = k·u)';
   document.getElementById('p1-live-output-label').textContent =
-    'First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = ' + setpoint.toFixed(1) + ')';
+    (firstOrder ? 'First-order' : 'Second-order') +
+    ' simulated output at 5 s (setpoint = ' + setpoint.toFixed(1) + ')';
   document.getElementById('p1-live-output').textContent =
     p1LatestSimulation.output[p1LatestSimulation.output.length - 1].toFixed(3);
   if (!document.getElementById('homework-two-intro').hidden) {
@@ -2692,6 +2783,7 @@ p1GainSliders.forEach(id =>
 );
 p1SetpointSlider.addEventListener('input', updateP1Gains);
 p1ControlLimitSlider.addEventListener('input', updateP1Gains);
+p1PlantSelector.addEventListener('change', updateP1Gains);
 updateP1Gains();
 </script>
 
