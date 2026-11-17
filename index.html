@@ -2446,6 +2446,67 @@ draw3();
 
 
 <script>
+function simulateFirstOrderClosedLoop(options = {}) {
+  const {
+    gain = 1,
+    tau = 1,
+    kp = 9,
+    setpoint = 1,
+    duration = 5,
+    timeStep = 0.005,
+    initialOutput = 0,
+    controlMin = -Infinity,
+    controlMax = Infinity
+  } = options;
+
+  if (![gain, tau, kp, setpoint, duration, timeStep, initialOutput].every(Number.isFinite) ||
+      gain <= 0 || tau <= 0 || kp < 0 || duration <= 0 || timeStep <= 0) {
+    throw new Error('Invalid first-order plant or controller parameters.');
+  }
+  if (typeof controlMin !== 'number' || Number.isNaN(controlMin) ||
+      typeof controlMax !== 'number' || Number.isNaN(controlMax) ||
+      controlMin > controlMax) {
+    throw new Error('Invalid control limits.');
+  }
+
+  const steps = Math.ceil(duration / timeStep);
+  if (steps > 20000) {
+    throw new Error('The simulation has too many time steps.');
+  }
+
+  const dt = duration / steps;
+  const time = [];
+  const output = [];
+  const reference = [];
+  const control = [];
+  const error = [];
+  let y = initialOutput;
+
+  const getControl = (state) =>
+    Math.max(controlMin, Math.min(controlMax, kp * (setpoint - state)));
+  const derivative = (state) => (gain * getControl(state) - state) / tau;
+
+  for (let i = 0; i <= steps; i++) {
+    time.push(i * dt);
+    output.push(y);
+    reference.push(setpoint);
+    error.push(setpoint - y);
+    control.push(getControl(y));
+
+    if (i === steps) break;
+
+    const k1 = derivative(y);
+    const k2 = derivative(y + dt * k1 / 2);
+    const k3 = derivative(y + dt * k2 / 2);
+    const k4 = derivative(y + dt * k3);
+    y += dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+  }
+
+  return { time, output, reference, control, error };
+}
+</script>
+
+<script>
   const homeworkEntry = document.getElementById('homework-entry');
   const homeworkChoices = document.getElementById('homework-choices');
   const homeworkTwoIntro = document.getElementById('homework-two-intro');
