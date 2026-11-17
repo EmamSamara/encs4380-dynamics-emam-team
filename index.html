@@ -156,6 +156,20 @@
   .p1-field input { width: 100%; margin: 2px 0; accent-color: #61afef; }
   .p1-field input:disabled { opacity: 0.7; }
   .p1-value { color: #61afef; font-weight: bold; }
+  .p1-live-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding: 14px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+  }
+  .p1-live-preview span { color: #b0b0b0; font-size: 13px; line-height: 1.5; }
+  .p1-live-preview strong { color: #61afef; font-size: 22px; }
   .p1-empty, .p1-plot-empty {
     display: flex;
     align-items: center;
@@ -243,8 +257,8 @@
         <button class="homework-back p1-back" id="back-to-homeworks" type="button">← Choose another homework</button>
         <p class="homework-eyebrow">Homework 02 · Control</p>
         <h1 id="p1-page-title">P1 — PID Playground</h1>
-        <p class="homework-description">Explore a PID controller with first-order and second-order plants. This is the interface layout; the controls and simulations will be connected in the next steps.</p>
-        <div class="p1-preview-note">Interface preview — no PID simulation is running yet.</div>
+        <p class="homework-description">Explore a PID controller with first-order and second-order plants. Adjust the PID gains to see the first-order closed-loop response update.</p>
+        <div class="p1-preview-note">P, I and D gain controls are active. Interactive plots will be added in the next steps.</div>
 
         <section class="p1-card" aria-labelledby="p1-settings-title">
           <h2 id="p1-settings-title">Controller Settings</h2>
@@ -262,16 +276,20 @@
             </label>
             <label class="p1-field" for="p1-kp">
               Proportional Gain (Kp) <span class="p1-value">1.0</span>
-              <input id="p1-kp" type="range" min="0" max="20" step="0.1" value="1" disabled>
+              <input id="p1-kp" type="range" min="0" max="20" step="0.1" value="1">
             </label>
             <label class="p1-field" for="p1-ki">
               Integral Gain (Ki) <span class="p1-value">0.0</span>
-              <input id="p1-ki" type="range" min="0" max="20" step="0.1" value="0" disabled>
+              <input id="p1-ki" type="range" min="0" max="20" step="0.1" value="0">
             </label>
             <label class="p1-field" for="p1-kd">
               Derivative Gain (Kd) <span class="p1-value">0.0</span>
-              <input id="p1-kd" type="range" min="0" max="20" step="0.1" value="0" disabled>
+              <input id="p1-kd" type="range" min="0" max="20" step="0.1" value="0">
             </label>
+          </div>
+          <div class="p1-live-preview" role="status" aria-live="polite">
+            <span>First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = 1)</span>
+            <strong id="p1-live-output">—</strong>
           </div>
         </section>
 
@@ -2451,6 +2469,8 @@ function simulateFirstOrderClosedLoop(options = {}) {
     gain = 1,
     tau = 1,
     kp = 9,
+    ki = 0,
+    kd = 0,
     setpoint = 1,
     duration = 5,
     timeStep = 0.005,
@@ -2459,8 +2479,8 @@ function simulateFirstOrderClosedLoop(options = {}) {
     controlMax = Infinity
   } = options;
 
-  if (![gain, tau, kp, setpoint, duration, timeStep, initialOutput].every(Number.isFinite) ||
-      gain <= 0 || tau <= 0 || kp < 0 || duration <= 0 || timeStep <= 0) {
+  if (![gain, tau, kp, ki, kd, setpoint, duration, timeStep, initialOutput].every(Number.isFinite) ||
+      gain <= 0 || tau <= 0 || kp < 0 || ki < 0 || kd < 0 || duration <= 0 || timeStep <= 0) {
     throw new Error('Invalid first-order plant or controller parameters.');
   }
   if (typeof controlMin !== 'number' || Number.isNaN(controlMin) ||
@@ -2481,29 +2501,68 @@ function simulateFirstOrderClosedLoop(options = {}) {
   const control = [];
   const error = [];
   let y = initialOutput;
+  let integral = 0;
 
-  const getControl = (state) =>
-    Math.max(controlMin, Math.min(controlMax, kp * (setpoint - state)));
-  const derivative = (state) => (gain * getControl(state) - state) / tau;
+  const getControl = (state, accumulatedError) => {
+    const e = setpoint - state;
+    const raw = (tau * (kp * e + ki * accumulatedError) + kd * state) / (tau + gain * kd);
+    return Math.max(controlMin, Math.min(controlMax, raw));
+  };
+  const derivative = (state, accumulatedError) => ({
+    dy: (gain * getControl(state, accumulatedError) - state) / tau,
+    di: setpoint - state
+  });
 
   for (let i = 0; i <= steps; i++) {
     time.push(i * dt);
     output.push(y);
     reference.push(setpoint);
     error.push(setpoint - y);
-    control.push(getControl(y));
+    control.push(getControl(y, integral));
 
     if (i === steps) break;
 
-    const k1 = derivative(y);
-    const k2 = derivative(y + dt * k1 / 2);
-    const k3 = derivative(y + dt * k2 / 2);
-    const k4 = derivative(y + dt * k3);
-    y += dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+    const k1 = derivative(y, integral);
+    const k2 = derivative(y + dt * k1.dy / 2, integral + dt * k1.di / 2);
+    const k3 = derivative(y + dt * k2.dy / 2, integral + dt * k2.di / 2);
+    const k4 = derivative(y + dt * k3.dy, integral + dt * k3.di);
+    y += dt * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy) / 6;
+    integral += dt * (k1.di + 2 * k2.di + 2 * k3.di + k4.di) / 6;
+    if (!Number.isFinite(y) || !Number.isFinite(integral)) {
+      throw new Error('The simulation became unstable.');
+    }
   }
 
   return { time, output, reference, control, error };
 }
+let p1LatestSimulation = null;
+const p1GainSliders = ['p1-kp', 'p1-ki', 'p1-kd'];
+
+function updateP1Gains() {
+  const gains = {};
+  p1GainSliders.forEach(id => {
+    const input = document.getElementById(id);
+    const value = Number(input.value);
+    document.querySelector('label[for="' + id + '"] .p1-value').textContent = value.toFixed(1);
+    gains[id.slice(3)] = value;
+  });
+  p1LatestSimulation = simulateFirstOrderClosedLoop({
+    gain: 1,
+    tau: 1,
+    kp: gains.kp,
+    ki: gains.ki,
+    kd: gains.kd,
+    setpoint: 1,
+    duration: 5
+  });
+  document.getElementById('p1-live-output').textContent =
+    p1LatestSimulation.output[p1LatestSimulation.output.length - 1].toFixed(3);
+}
+
+p1GainSliders.forEach(id =>
+  document.getElementById(id).addEventListener('input', updateP1Gains)
+);
+updateP1Gains();
 </script>
 
 <script>
