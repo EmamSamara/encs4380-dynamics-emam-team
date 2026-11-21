@@ -358,6 +358,7 @@
             </div>
           </div>
         </div>
+        <!-- Homework 2 -> P1 Layout -->
         <button class="homework-back p1-back" id="back-to-homeworks" type="button">← Choose another homework</button>
         <p class="homework-eyebrow">Homework 02 · Control</p>
         <h1 id="p1-page-title">P1 — PID Playground</h1>
@@ -2660,8 +2661,9 @@ draw3();
     }
     module4HintButton.addEventListener('click', showModule4Hint);
   </script>
+<!-- //////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
 
-
+<!-- Homework 2 -> P1 script -->
 <script>
 function simulateFirstOrderClosedLoop(options = {}) {
   const {
@@ -3292,6 +3294,8 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
 </script>
 
+
+<!-- Main page (select homework) -->
 <script>
   const homeworkEntry = document.getElementById('homework-entry');
   const homeworkChoices = document.getElementById('homework-choices');
@@ -3328,6 +3332,221 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   document.getElementById('back-to-homeworks').addEventListener('click', showHomeworkChoices);
   homeworkSwitch.addEventListener('click', showHomeworkChoices);
+</script>
+<!-- ///////////////////////////////////////////////////////////////// -->
+<!-- P2 layout -->
+<template id="p2-layout">
+  <section class="p1-card" aria-labelledby="p2-page-title">
+    <div class="p1-field">
+      <h2 id="p2-page-title">P2 — A Slow Sensor in the Loop</h2>
+      <label class="p1-field" for="p2-sensor-tau">Sensor Time Constant (τs)</label>
+      <output id="p2-sensor-tau-value" for="p2-sensor-tau">0.00 s</output>
+      <input id="p2-sensor-tau" type="range" min="0" max="3" step="0.05" value="0">
+    </div>
+    <div class="p1-field">
+      <label for="p2-kp">Proportional Gain (Kp)</label>
+      <output id="p2-kp-value" for="p2-kp">9.0</output>
+      <input id="p2-kp" type="range" min="0" max="20" step="0.1" value="9">
+    </div>
+    <div class="p1-field">
+      <label for="p2-ki">Integral Gain (Ki)</label>
+      <output id="p2-ki-value" for="p2-ki">0.0</output>
+      <input id="p2-ki" type="range" min="0" max="20" step="0.1" value="0">
+    </div>
+    <div class="p1-field">
+      <label for="p2-kd">Derivative Gain (Kd)</label>
+      <output id="p2-kd-value" for="p2-kd">0.0</output>
+      <input id="p2-kd" type="range" min="0" max="20" step="0.1" value="0">
+    </div>
+  </section>
+  <section class="p1-card" aria-labelledby="p2-response-title">
+    <h2 id="p2-response-title">True Output vs. Sensor Reading</h2>
+    <div class="p1-response-chart" id="p2-response-plot" role="img" aria-label="True output and sensor reading over time"></div>
+  </section>
+  
+  <section class="p1-card" aria-labelledby="p2-prediction-title">
+    <h2 id="p2-prediction-title">Predict, then Check</h2>
+    <div class="p1-field">
+      <label for="p2-prediction-answer">
+        With Kp = 9 and Ki = Kd = 0, what happens to the true output's
+        overshoot when τs increases from 0 to 0.5 s?
+      </label>
+
+      <select id="p2-prediction-answer">
+        <option value="">Choose a prediction</option>
+        <option value="increase">It increases</option>
+        <option value="decrease">It decreases</option>
+        <option value="same">It stays about the same</option>
+      </select>
+    </div>
+
+    <button id="p2-check-prediction" class="p1-action-button" type="button">
+      Check with simulation
+    </button>
+
+    <p id="p2-prediction-feedback" class="p1-feedback" role="status"></p>
+  </section>
+</template>
+
+<!-- P2 script -->
+<script>
+(() => {
+  const layout = document.getElementById('p2-layout');
+  const container = document.getElementById('homework-two-intro');
+  container.append(layout.content.cloneNode(true));
+
+  const sensorTauInput = document.getElementById('p2-sensor-tau');
+  const kpInput = document.getElementById('p2-kp');
+  const kiInput = document.getElementById('p2-ki');
+  const kdInput = document.getElementById('p2-kd');
+
+  function simulateP2(sensorTau, kp, ki, kd) {
+    const setpoint = 1;
+    const duration = 8;
+    const dt = 0.002;
+    const steps = Math.round(duration / dt);
+    const controlMin = -20;
+    const controlMax = 20;
+
+    // Use the P1 solver for ideal measurement.
+    if (sensorTau === 0) {
+      const ideal = simulateFirstOrderClosedLoop({
+        gain: 1,
+        tau: 1,
+        kp,
+        ki,
+        kd,
+        setpoint,
+        duration,
+        timeStep: dt,
+        controlMin,
+        controlMax,
+      });
+      return { ...ideal, measured: ideal.output };
+    }
+
+    function rates([y, measured, integral]) {
+      const error = setpoint - measured;
+      const dMeasured = (y - measured) / sensorTau;
+      const rawControl = kp * error + ki * integral - kd * dMeasured;
+      const control = Math.max(controlMin, Math.min(controlMax, rawControl));
+
+      // Plant gain K = 1 and plant time constant τ = 1 s.
+      return [control - y, dMeasured, error];
+    }
+
+    const advance = (state, rate, step) =>
+      state.map((value, index) => value + step * rate[index]);
+
+    const time = [0];
+    const output = [0];
+    const measured = [0];
+    let state = [0, 0, 0]; // [true output, measured output, integral]
+
+    for (let i = 1; i <= steps; i++) {
+      const k1 = rates(state);
+      const k2 = rates(advance(state, k1, dt / 2));
+      const k3 = rates(advance(state, k2, dt / 2));
+      const k4 = rates(advance(state, k3, dt));
+
+      state = state.map((value, j) =>
+        value + dt * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]) / 6
+      );
+
+      time.push(i * dt);
+      output.push(state[0]);
+      measured.push(state[1]);
+    }
+
+    return { time, output, measured };
+  }
+
+  function updateP2() {
+    const sensorTau = Number(sensorTauInput.value);
+    const kp = Number(kpInput.value);
+    const ki = Number(kiInput.value);
+    const kd = Number(kdInput.value);
+
+    document.getElementById('p2-sensor-tau-value').value =
+      `${sensorTau.toFixed(2)} s`;
+    document.getElementById('p2-kp-value').value = kp.toFixed(1);
+    document.getElementById('p2-ki-value').value = ki.toFixed(1);
+    document.getElementById('p2-kd-value').value = kd.toFixed(1);
+
+    const result = simulateP2(sensorTau, kp, ki, kd);
+
+    Plotly.react('p2-response-plot', [
+      {
+        x: result.time,
+        y: result.output,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'True output y(t)',
+        line: { color: '#61afef', width: 3 },
+      },
+      {
+        x: result.time,
+        y: result.measured,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Sensor reading yₘ(t)',
+        line: { color: '#e5c07b', width: 2, dash: 'dash' },
+      },
+    ], {
+      paper_bgcolor: '#1e1e1e',
+      plot_bgcolor: '#1e1e1e',
+      font: { color: '#e0e0e0' },
+      xaxis: { title: 'Time (s)', gridcolor: '#333' },
+      yaxis: { title: 'Output', gridcolor: '#333', automargin: true },
+      margin: { t: 18, r: 16, b: 84, l: 60 },
+      legend: { orientation: 'h', y: -0.25 },
+      hovermode: 'x unified',
+      autosize: true,
+    }, { responsive: true, displayModeBar: false });
+  }
+
+  function checkP2Prediction() {
+    const answer = document.getElementById('p2-prediction-answer').value;
+    const feedback = document.getElementById('p2-prediction-feedback');
+
+    if (!answer) {
+      feedback.textContent = 'Choose a prediction first.';
+      return;
+    }
+
+    const ideal = simulateP2(0, 9, 0, 0);
+    const slow = simulateP2(0.5, 9, 0, 0);
+    const steadyState = 0.9;
+    const overshoot = result =>
+      100 * Math.max(0, Math.max(...result.output) - steadyState) /
+      steadyState;
+
+    const idealOvershoot = overshoot(ideal);
+    const slowOvershoot = overshoot(slow);
+    const actual = slowOvershoot > idealOvershoot ? 'increase' : 'same';
+
+    feedback.textContent =
+      `${answer === actual ? 'Correct.' : 'Try again.'} ` +
+      `True-output overshoot changes from ${idealOvershoot.toFixed(1)}% ` +
+      `to ${slowOvershoot.toFixed(1)}%, measured relative to 0.90.`;
+
+    sensorTauInput.value = '0.5';
+    kpInput.value = '9';
+    kiInput.value = '0';
+    kdInput.value = '0';
+    updateP2();
+  }
+
+  for (const input of [sensorTauInput, kpInput, kiInput, kdInput]) {
+    input.addEventListener('input', updateP2);
+  }
+
+  document.getElementById('p2-check-prediction')
+    .addEventListener('click', checkP2Prediction);
+
+  document.getElementById('open-homework-2')
+    .addEventListener('click', updateP2);
+})();
 </script>
 
 </body>
