@@ -3550,6 +3550,61 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 })();
 </script>
 
+
+<!-- P3: Digital PID -->
+<template id="p3-layout">
+
+  <hr style="margin: 40px 0; border: 1px solid #333;">
+
+  <h1 id="p3-title">P3 — Digital PID</h1>
+
+  <p class="p1-secondary">
+    Explore how the sampling time affects
+    the performance of a digital PID controller.
+  </p>
+
+  <section class="p1-card">
+    <h2>Sampling Settings</h2>
+
+    <label class="p1-field" for="p3-ts">
+      Sampling Time (Ts):
+      <span class="p1-value" id="p3-ts-value">0.02</span> s
+
+      <input
+        id="p3-ts"
+        type="range"
+        min="0.01"
+        max="0.50"
+        step="0.01"
+        value="0.02">
+    </label>
+
+  </section>
+
+</template>
+
+
+<script>
+(() => {
+
+  // Add P3 to Homework 2
+  const p3Layout = document.getElementById('p3-layout');
+  const container = document.getElementById('homework-two-intro');
+
+  container.appendChild(p3Layout.content.cloneNode(true));
+
+  // Sampling Time controls
+  const tsSlider = document.getElementById('p3-ts');
+  const tsValue = document.getElementById('p3-ts-value');
+
+  // Update the displayed value
+  tsSlider.addEventListener('input', () => {
+    tsValue.textContent = Number(tsSlider.value).toFixed(2);
+  });
+
+})();
+</script>
+
 </body>
 
 </html>
