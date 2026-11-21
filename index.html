@@ -3669,6 +3669,23 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 </section>
 
 
+<section class="p1-card">
+
+  <h2>Digital PID — Stair-Step Control Signal</h2>
+
+  <p class="p1-secondary">
+    The control signal updates every Ts seconds
+    and stays constant between samples.
+  </p>
+
+  <div
+    id="p3-control-plot"
+    class="p1-response-chart">
+  </div>
+
+</section>
+
+
 </template>
 
 
@@ -3774,6 +3791,10 @@ function simulateP3(Ts, Kp, Ki, Kd, antiWindup = false) {
   const reference = [setpoint];
   const control = [0];
 
+  const sampleTimes = [];
+  const sampleControl = [];
+
+
   // Initial conditions
   let y = 0;
   let previousError = 0;
@@ -3811,6 +3832,9 @@ function simulateP3(Ts, Kp, Ki, Kd, antiWindup = false) {
       Math.min(controlLimit, pid.control)
     );
 
+    sampleTimes.push(t);
+    sampleControl.push(u);
+
     // Keep control constant until next sample
     control[control.length - 1] = u;
 
@@ -3839,7 +3863,19 @@ function simulateP3(Ts, Kp, Ki, Kd, antiWindup = false) {
     }
   }
 
-  return { time, output, reference, control };
+  
+      sampleTimes.push(duration);
+      sampleControl.push(sampleControl[sampleControl.length - 1]);
+
+return {
+  time,
+  output,
+  reference,
+  control,
+  sampleTimes,
+  sampleControl
+};
+
 }
 
 
@@ -3887,9 +3923,56 @@ function updateP3() {
     responsive: true,
     displayModeBar: false
   });
+  
+Plotly.react('p3-control-plot', [
+  {
+    x: result.sampleTimes,
+    y: result.sampleControl,
+    mode: 'lines',
+    name: 'Digital Control u[k]',
+    line: {
+      color: '#61afef',
+      width: 3,
+      shape: 'hv'
+    }
+  },
+  {
+    x: [0, 8],
+    y: [10, 10],
+    mode: 'lines',
+    name: 'Upper Limit (+10)',
+    line: {
+      color: '#e5c07b',
+      width: 2,
+      dash: 'dash'
+    }
+  },
+  {
+    x: [0, 8],
+    y: [-10, -10],
+    mode: 'lines',
+    name: 'Lower Limit (-10)',
+    line: {
+      color: '#e06c75',
+      width: 2,
+      dash: 'dash'
+    }
+  }
+], {
+  paper_bgcolor: '#1e1e1e',
+  plot_bgcolor: '#1e1e1e',
+  font: { color: '#e0e0e0' },
+  xaxis: { title: 'Time (s)', gridcolor: '#333' },
+  yaxis: { title: 'Control Signal u[k]', gridcolor: '#333' },
+  margin: { t: 20, r: 20, b: 80, l: 65 },
+  legend: { orientation: 'h', y: -0.3 },
+  autosize: true
+}, {
+  responsive: true,
+  displayModeBar: false
+});
 
 }
-
 
 // Update graph whenever a slider changes
 ['p3-ts', 'p3-kp', 'p3-ki', 'p3-kd'].forEach(id => {
