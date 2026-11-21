@@ -3551,7 +3551,7 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 </script>
 
 
-<!-- P3: Digital PID -->
+// P3: Digital PID 
 <template id="p3-layout">
 
   <hr style="margin: 40px 0; border: 1px solid #333;">
@@ -3581,6 +3581,59 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   </section>
 
+// P3: PID Gain Settings
+<section class="p1-card">
+
+  <h2>PID Controller Gains</h2>
+
+  // Proportional Gain
+  <label class="p1-field" for="p3-kp">
+    Proportional Gain (Kp):
+    <span class="p1-value" id="p3-kp-value">1.0</span>
+
+    <input
+      id="p3-kp"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="1">
+  </label>
+
+  <br>
+
+  // Integral Gain
+  <label class="p1-field" for="p3-ki">
+    Integral Gain (Ki):
+    <span class="p1-value" id="p3-ki-value">0.0</span>
+
+    <input
+      id="p3-ki"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="0">
+  </label>
+
+  <br>
+
+   // Derivative Gain
+  <label class="p1-field" for="p3-kd">
+    Derivative Gain (Kd):
+    <span class="p1-value" id="p3-kd-value">0.0</span>
+
+    <input
+      id="p3-kd"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="0">
+  </label>
+
+</section>
+
 </template>
 
 
@@ -3601,6 +3654,22 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
   tsSlider.addEventListener('input', () => {
     tsValue.textContent = Number(tsSlider.value).toFixed(2);
   });
+
+
+// P3: PID Gain Controls
+const gainSliders = ['p3-kp', 'p3-ki', 'p3-kd'];
+
+gainSliders.forEach(id => {
+
+  const slider = document.getElementById(id);
+  const valueDisplay = document.getElementById(id + '-value');
+
+  slider.addEventListener('input', () => {
+    valueDisplay.textContent = Number(slider.value).toFixed(1);
+  });
+
+});
+
 
 })();
 </script>
