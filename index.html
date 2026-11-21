@@ -3634,6 +3634,24 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
 </section>
 
+
+<section class="p1-card">
+
+  <h2>Digital PID — Output vs. Setpoint</h2>
+
+  <p class="p1-secondary">
+    Observe how the system response changes
+    with the sampling time and PID gains.
+  </p>
+
+  <div
+    id="p3-response-plot"
+    class="p1-response-chart">
+  </div>
+
+</section>
+
+
 </template>
 
 
@@ -3697,6 +3715,146 @@ function calculateDigitalPID(error, previousError, errorSum, Ts, Kp, Ki, Kd) {
     D: D
   };
 }
+
+
+// P3: Digital PID closed-loop simulation
+function simulateP3(Ts, Kp, Ki, Kd) {
+
+  // First-order plant parameters
+  const K = 1;
+  const tau = 1;
+  const setpoint = 1;
+
+  // Simulation settings
+  const duration = 8;
+  const controlLimit = 10;
+  const subSteps = 10;
+
+  // Data arrays
+  const time = [0];
+  const output = [0];
+  const reference = [setpoint];
+  const control = [0];
+
+  // Initial conditions
+  let y = 0;
+  let previousError = 0;
+  let errorSum = 0;
+
+  // Run the digital controller every Ts seconds
+  for (let t = 0; t < duration - 1e-9; t += Ts) {
+
+    // Calculate current error
+    const error = setpoint - y;
+
+    // Calculate PID control signal
+    const pid = calculateDigitalPID(
+      error,
+      previousError,
+      errorSum,
+      Ts,
+      Kp,
+      Ki,
+      Kd
+    );
+
+    // Update controller memory
+    previousError = error;
+    errorSum = pid.newErrorSum;
+
+    // Apply actuator limits
+    const u = Math.max(
+      -controlLimit,
+      Math.min(controlLimit, pid.control)
+    );
+
+    // Keep control constant until next sample
+    control[control.length - 1] = u;
+
+    // Divide the sampling interval into smaller RK4 steps
+    const interval = Math.min(Ts, duration - t);
+    const dt = interval / subSteps;
+
+    // Plant dynamics: tau * dy/dt + y = K*u
+    const f = (state) => (K * u - state) / tau;
+
+    for (let j = 0; j < subSteps; j++) {
+
+      // RK4 numerical integration
+      const k1 = f(y);
+      const k2 = f(y + dt * k1 / 2);
+      const k3 = f(y + dt * k2 / 2);
+      const k4 = f(y + dt * k3);
+
+      y += dt * (k1 + 2*k2 + 2*k3 + k4) / 6;
+
+      // Save simulation results
+      time.push(t + (j + 1) * dt);
+      output.push(y);
+      reference.push(setpoint);
+      control.push(u);
+    }
+  }
+
+  return { time, output, reference, control };
+}
+
+
+// P3: Update simulation and output graph
+function updateP3() {
+
+  // Read current values from the website
+  const Ts = Number(document.getElementById('p3-ts').value);
+  const Kp = Number(document.getElementById('p3-kp').value);
+  const Ki = Number(document.getElementById('p3-ki').value);
+  const Kd = Number(document.getElementById('p3-kd').value);
+
+  // Run simulation using slider values
+  const result = simulateP3(Ts, Kp, Ki, Kd);
+
+  // Draw output and setpoint
+  Plotly.react('p3-response-plot', [
+    {
+      x: result.time,
+      y: result.output,
+      mode: 'lines',
+      name: 'System Output',
+      line: { color: '#61afef', width: 3 }
+    },
+    {
+      x: result.time,
+      y: result.reference,
+      mode: 'lines',
+      name: 'Setpoint',
+      line: { color: '#98c379', width: 2, dash: 'dash' }
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0' },
+    xaxis: { title: 'Time (s)', gridcolor: '#333' },
+    yaxis: { title: 'Output', gridcolor: '#333' },
+    margin: { t: 20, r: 20, b: 80, l: 60 },
+    legend: { orientation: 'h', y: -0.3 },
+    autosize: true
+  }, {
+    responsive: true,
+    displayModeBar: false
+  });
+
+}
+
+
+// Update graph whenever a slider changes
+['p3-ts', 'p3-kp', 'p3-ki', 'p3-kd'].forEach(id => {
+
+  document.getElementById(id).addEventListener('input', updateP3);
+
+});
+
+// Draw graph when Homework 2 is opened
+document.getElementById('open-homework-2')
+  .addEventListener('click', updateP3);
 
 
 })();
