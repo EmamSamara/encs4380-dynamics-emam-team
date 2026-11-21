@@ -3550,6 +3550,685 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 })();
 </script>
 
+
+<!--P3: Digital PID--> 
+<template id="p3-layout">
+
+  <hr style="margin: 40px 0; border: 1px solid #333;">
+
+  <h1 id="p3-title">P3 — Digital PID</h1>
+
+  <p class="p1-secondary">
+    Explore how the sampling time affects
+    the performance of a digital PID controller.
+  </p>
+
+  <section class="p1-card">
+    <h2>Sampling Settings</h2>
+
+    <label class="p1-field" for="p3-ts">
+      Sampling Time (Ts):
+      <span class="p1-value" id="p3-ts-value">0.02</span> s
+
+      <input
+        id="p3-ts"
+        type="range"
+        min="0.01"
+        max="0.50"
+        step="0.01"
+        value="0.02">
+    </label>
+
+  </section>
+
+<!--P3: PID Gain Settings-->
+<section class="p1-card">
+
+  <h2>PID Controller Gains</h2>
+
+  <!--Proportional Gain-->
+  <label class="p1-field" for="p3-kp">
+    Proportional Gain (Kp):
+    <span class="p1-value" id="p3-kp-value">1.0</span>
+
+    <input
+      id="p3-kp"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="1">
+  </label>
+
+  <br>
+
+  <!--Integral Gain-->
+  <label class="p1-field" for="p3-ki">
+    Integral Gain (Ki):
+    <span class="p1-value" id="p3-ki-value">0.0</span>
+
+    <input
+      id="p3-ki"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="0">
+  </label>
+
+  <br>
+
+   <!--Derivative Gain-->
+  <label class="p1-field" for="p3-kd">
+    Derivative Gain (Kd):
+    <span class="p1-value" id="p3-kd-value">0.0</span>
+
+    <input
+      id="p3-kd"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="0">
+  </label>
+
+</section>
+
+
+<section class="p1-card">
+
+  <h2>Anti-Windup Control</h2>
+
+  <label for="p3-anti-windup">
+    <input type="checkbox" id="p3-anti-windup">
+    Enable Anti-Windup
+  </label>
+
+  <p class="p1-secondary">
+    Prevents excessive integral accumulation
+    when the control signal reaches its limit.
+  </p>
+
+</section>
+
+
+<section class="p1-card">
+
+  <h2>Digital PID — Output vs. Setpoint</h2>
+
+  <p class="p1-secondary">
+    Observe how the system response changes
+    with the sampling time and PID gains.
+  </p>
+
+  <div
+    id="p3-response-plot"
+    class="p1-response-chart">
+  </div>
+
+</section>
+
+
+<section class="p1-card">
+
+  <h2>Digital PID — Stair-Step Control Signal</h2>
+
+  <p class="p1-secondary">
+    The control signal updates every Ts seconds
+    and stays constant between samples.
+  </p>
+
+  <div
+    id="p3-control-plot"
+    class="p1-response-chart">
+  </div>
+
+</section>
+
+<section class="p1-card">
+
+  <h2>Arduino Digital PID Code</h2>
+
+  <p class="p1-secondary">
+    Arduino code generated automatically using
+    the selected PID gains, sampling time,
+    and Anti-Windup setting.
+  </p>
+
+  <textarea
+    id="p3-arduino-code"
+    readonly
+    rows="22"
+    style="width:100%; box-sizing:border-box;
+    background:#161616; color:#e0e0e0;
+    border:1px solid #444; border-radius:8px;
+    padding:15px; font-family:monospace;
+    font-size:13px; line-height:1.5;">
+  </textarea>
+
+  <button
+    id="p3-copy-code"
+    class="p1-action-button"
+    type="button">
+    Copy Arduino Code
+  </button>
+
+  <p id="p3-copy-status" class="p1-secondary"></p>
+
+</section>
+
+<section class="p1-card">
+
+  <h2>Predict, then Check</h2>
+
+  <p class="p1-secondary">
+    With Kp = 9, Ki = 0 and Kd = 0,
+    what happens to oscillations when Ts
+    increases from 0.02 s to 0.30 s?
+  </p>
+
+  <label class="p1-field" for="p3-prediction">
+    Your Prediction:
+
+    <select id="p3-prediction" class="p1-prediction">
+      <option value="">Choose your prediction</option>
+      <option value="increase">Oscillations increase</option>
+      <option value="decrease">Oscillations decrease</option>
+      <option value="same">Almost no change</option>
+    </select>
+  </label>
+
+  <button
+    id="p3-check-prediction"
+    class="p1-action-button"
+    type="button">
+    Check with Simulation
+  </button>
+
+  <p id="p3-prediction-feedback" class="p1-feedback">
+    Choose a prediction before checking.
+  </p>
+
+</section>
+
+</template>
+
+<script>
+(() => {
+
+  // Add P3 to Homework 2
+  const p3Layout = document.getElementById('p3-layout');
+  const container = document.getElementById('homework-two-intro');
+
+  container.appendChild(p3Layout.content.cloneNode(true));
+
+  // Sampling Time controls
+  const tsSlider = document.getElementById('p3-ts');
+  const tsValue = document.getElementById('p3-ts-value');
+
+  // Update the displayed value
+  tsSlider.addEventListener('input', () => {
+    tsValue.textContent = Number(tsSlider.value).toFixed(2);
+  });
+
+
+// P3: PID Gain Controls
+const gainSliders = ['p3-kp', 'p3-ki', 'p3-kd'];
+
+gainSliders.forEach(id => {
+
+  const slider = document.getElementById(id);
+  const valueDisplay = document.getElementById(id + '-value');
+
+  slider.addEventListener('input', () => {
+    valueDisplay.textContent = Number(slider.value).toFixed(1);
+  });
+
+});
+
+  
+// P3: Digital PID calculation with Anti-Windup
+function calculateDigitalPID(
+  error, previousError, errorSum,
+  Ts, Kp, Ki, Kd,
+  antiWindup = false,
+  controlLimit = Infinity
+) {
+
+  // Proportional term
+  const P = Kp * error;
+
+  // Derivative term
+  const D = Kd * (error - previousError) / Ts;
+
+  // Calculate the proposed integral accumulation
+  let newErrorSum = errorSum + error;
+
+  // Calculate the proposed control signal
+  const candidateI = Ki * Ts * newErrorSum;
+  const candidateU = P + candidateI + D;
+
+  // Stop integration if saturation would become worse
+  if (antiWindup && Ki > 0) {
+
+    if (
+      (candidateU > controlLimit && error > 0) ||
+      (candidateU < -controlLimit && error < 0)
+    ) {
+      newErrorSum = errorSum;
+    }
+
+  }
+
+  // Final integral term
+  const I = Ki * Ts * newErrorSum;
+
+  // Total PID output
+  const u = P + I + D;
+
+  return {
+    control: u,
+    newErrorSum: newErrorSum,
+    P: P,
+    I: I,
+    D: D
+  };
+}
+
+
+// P3: Digital PID closed-loop simulation
+function simulateP3(Ts, Kp, Ki, Kd, antiWindup = false) {
+
+  // First-order plant parameters
+  const K = 1;
+  const tau = 1;
+  const setpoint = 1;
+
+  // Simulation settings
+  const duration = 8;
+  const controlLimit = 10;
+  const subSteps = 10;
+
+  // Data arrays
+  const time = [0];
+  const output = [0];
+  const reference = [setpoint];
+  const control = [0];
+
+  const sampleTimes = [];
+  const sampleControl = [];
+
+
+  // Initial conditions
+  let y = 0;
+  let previousError = 0;
+  let errorSum = 0;
+
+  // Run the digital controller every Ts seconds
+  for (let t = 0; t < duration - 1e-9; t += Ts) {
+
+    // Calculate current error
+    const error = setpoint - y;
+
+    // Calculate PID control signal
+    
+// Calculate PID with Anti-Windup setting
+   const pid = calculateDigitalPID(
+    error,
+    previousError,
+    errorSum,
+    Ts,
+    Kp,
+    Ki,
+    Kd,
+    antiWindup,
+    controlLimit
+);
+
+
+    // Update controller memory
+    previousError = error;
+    errorSum = pid.newErrorSum;
+
+    // Apply actuator limits
+    const u = Math.max(
+      -controlLimit,
+      Math.min(controlLimit, pid.control)
+    );
+
+    sampleTimes.push(t);
+    sampleControl.push(u);
+
+    // Keep control constant until next sample
+    control[control.length - 1] = u;
+
+    // Divide the sampling interval into smaller RK4 steps
+    const interval = Math.min(Ts, duration - t);
+    const dt = interval / subSteps;
+
+    // Plant dynamics: tau * dy/dt + y = K*u
+    const f = (state) => (K * u - state) / tau;
+
+    for (let j = 0; j < subSteps; j++) {
+
+      // RK4 numerical integration
+      const k1 = f(y);
+      const k2 = f(y + dt * k1 / 2);
+      const k3 = f(y + dt * k2 / 2);
+      const k4 = f(y + dt * k3);
+
+      y += dt * (k1 + 2*k2 + 2*k3 + k4) / 6;
+
+      // Save simulation results
+      time.push(t + (j + 1) * dt);
+      output.push(y);
+      reference.push(setpoint);
+      control.push(u);
+    }
+  }
+
+  
+      sampleTimes.push(duration);
+      sampleControl.push(sampleControl[sampleControl.length - 1]);
+
+return {
+  time,
+  output,
+  reference,
+  control,
+  sampleTimes,
+  sampleControl
+};
+
+}
+
+
+// P3: Update simulation and output graph
+function updateP3() {
+
+  // Read current values from the website
+  const Ts = Number(document.getElementById('p3-ts').value);
+  const Kp = Number(document.getElementById('p3-kp').value);
+  const Ki = Number(document.getElementById('p3-ki').value);
+  const Kd = Number(document.getElementById('p3-kd').value);
+
+  // Read Anti-Windup state
+  const antiWindup =
+   document.getElementById('p3-anti-windup').checked;
+  // Run simulation using slider values
+  const result = simulateP3(Ts, Kp, Ki, Kd, antiWindup);
+
+  // Draw output and setpoint
+  Plotly.react('p3-response-plot', [
+    {
+      x: result.time,
+      y: result.output,
+      mode: 'lines',
+      name: 'System Output',
+      line: { color: '#61afef', width: 3 }
+    },
+    {
+      x: result.time,
+      y: result.reference,
+      mode: 'lines',
+      name: 'Setpoint',
+      line: { color: '#98c379', width: 2, dash: 'dash' }
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0' },
+    xaxis: { title: 'Time (s)', gridcolor: '#333' },
+    yaxis: { title: 'Output', gridcolor: '#333' },
+    margin: { t: 20, r: 20, b: 80, l: 60 },
+    legend: { orientation: 'h', y: -0.3 },
+    autosize: true
+  }, {
+    responsive: true,
+    displayModeBar: false
+  });
+  
+Plotly.react('p3-control-plot', [
+  {
+    x: result.sampleTimes,
+    y: result.sampleControl,
+    mode: 'lines',
+    name: 'Digital Control u[k]',
+    line: {
+      color: '#61afef',
+      width: 3,
+      shape: 'hv'
+    }
+  },
+  {
+    x: [0, 8],
+    y: [10, 10],
+    mode: 'lines',
+    name: 'Upper Limit (+10)',
+    line: {
+      color: '#e5c07b',
+      width: 2,
+      dash: 'dash'
+    }
+  },
+  {
+    x: [0, 8],
+    y: [-10, -10],
+    mode: 'lines',
+    name: 'Lower Limit (-10)',
+    line: {
+      color: '#e06c75',
+      width: 2,
+      dash: 'dash'
+    }
+  }
+], {
+  paper_bgcolor: '#1e1e1e',
+  plot_bgcolor: '#1e1e1e',
+  font: { color: '#e0e0e0' },
+  xaxis: { title: 'Time (s)', gridcolor: '#333' },
+  yaxis: { title: 'Control Signal u[k]', gridcolor: '#333' },
+  margin: { t: 20, r: 20, b: 80, l: 65 },
+  legend: { orientation: 'h', y: -0.3 },
+  autosize: true
+}, {
+  responsive: true,
+  displayModeBar: false
+});
+
+updateP3ArduinoCode();
+}
+
+function updateP3ArduinoCode() {
+
+  const Ts = Number(document.getElementById('p3-ts').value);
+  const Kp = Number(document.getElementById('p3-kp').value);
+  const Ki = Number(document.getElementById('p3-ki').value);
+  const Kd = Number(document.getElementById('p3-kd').value);
+
+  const antiWindup =
+    document.getElementById('p3-anti-windup').checked;
+
+  const sampleMs = Math.round(Ts * 1000);
+
+  const code = `#include <math.h>
+
+const int SENSOR_PIN = A0;
+const int PWM_FORWARD = 9;
+const int PWM_REVERSE = 10;
+
+const float Kp = ${Kp.toFixed(2)}f;
+const float Ki = ${Ki.toFixed(2)}f;
+const float Kd = ${Kd.toFixed(2)}f;
+
+const unsigned long SAMPLE_MS = ${sampleMs}UL;
+const float Ts = SAMPLE_MS / 1000.0f;
+
+const float SETPOINT = 1.0f;
+const float CONTROL_LIMIT = 10.0f;
+const bool ANTI_WINDUP = ${antiWindup};
+
+float previousError = 0.0f;
+float errorSum = 0.0f;
+unsigned long lastSample = 0;
+
+float readPlant() {
+  return analogRead(SENSOR_PIN) / 1023.0f;
+}
+
+void applyControl(float u) {
+  int pwm = constrain(
+    (int)(fabsf(u) * 255.0f / CONTROL_LIMIT + 0.5f),
+    0, 255
+  );
+
+  if (u >= 0) {
+    analogWrite(PWM_REVERSE, 0);
+    analogWrite(PWM_FORWARD, pwm);
+  } else {
+    analogWrite(PWM_FORWARD, 0);
+    analogWrite(PWM_REVERSE, pwm);
+  }
+}
+
+void setup() {
+  pinMode(SENSOR_PIN, INPUT);
+  pinMode(PWM_FORWARD, OUTPUT);
+  pinMode(PWM_REVERSE, OUTPUT);
+
+  lastSample = millis();
+}
+
+void loop() {
+  unsigned long now = millis();
+
+  if ((unsigned long)(now - lastSample) < SAMPLE_MS) {
+    return;
+  }
+
+  lastSample = now;
+
+  float measuredOutput = readPlant();
+  float error = SETPOINT - measuredOutput;
+
+  float P = Kp * error;
+  float D = Kd * (error - previousError) / Ts;
+
+  float newErrorSum = errorSum + error;
+  float candidateU = P + Ki * Ts * newErrorSum + D;
+
+  if (ANTI_WINDUP && Ki > 0) {
+    if ((candidateU > CONTROL_LIMIT && error > 0) ||
+        (candidateU < -CONTROL_LIMIT && error < 0)) {
+      newErrorSum = errorSum;
+    }
+  }
+
+  float I = Ki * Ts * newErrorSum;
+  float u = P + I + D;
+
+  u = constrain(u, -CONTROL_LIMIT, CONTROL_LIMIT);
+
+  applyControl(u);
+
+  errorSum = newErrorSum;
+  previousError = error;
+}
+`;
+
+  document.getElementById('p3-arduino-code').value = code;
+}
+
+function checkP3Prediction() {
+
+  const prediction =
+    document.getElementById('p3-prediction').value;
+
+  const feedback =
+    document.getElementById('p3-prediction-feedback');
+
+  if (!prediction) {
+    feedback.textContent = 'Please choose a prediction first.';
+    feedback.removeAttribute('data-result');
+    return;
+  }
+
+  // Compare two sampling times using the same controller
+  const smallTs = simulateP3(0.02, 9, 0, 0, false);
+  const largeTs = simulateP3(0.30, 9, 0, 0, false);
+
+  // Measure oscillation range during the last 3 seconds
+  function oscillationRange(result) {
+    const values = result.output.filter(
+      (_, i) => result.time[i] >= 5
+    );
+
+    return Math.max(...values) - Math.min(...values);
+  }
+
+  const rangeSmall = oscillationRange(smallTs);
+  const rangeLarge = oscillationRange(largeTs);
+  const difference = rangeLarge - rangeSmall;
+
+  const actual = difference > 0.1
+    ? 'increase'
+    : difference < -0.1
+      ? 'decrease'
+      : 'same';
+
+  const correct = prediction === actual;
+
+  feedback.dataset.result = correct ? 'correct' : 'incorrect';
+  feedback.textContent =
+    (correct ? 'Correct prediction! ' : 'Incorrect prediction. ') +
+    'Oscillation range at Ts = 0.02 s: ' +
+    rangeSmall.toFixed(3) +
+    '. At Ts = 0.30 s: ' +
+    rangeLarge.toFixed(3) +
+    '. Increasing Ts ' +
+    (actual === 'increase'
+      ? 'increases oscillations.'
+      : actual === 'decrease'
+        ? 'decreases oscillations.'
+        : 'causes almost no change.');
+
+}
+
+// Update graph whenever a slider changes
+['p3-ts', 'p3-kp', 'p3-ki', 'p3-kd'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateP3);
+});
+
+// Draw graph when Homework 2 is opened
+document.getElementById('open-homework-2').addEventListener('click', updateP3);
+// Update simulation when Anti-Windup changes
+document.getElementById('p3-anti-windup').addEventListener('change', updateP3);
+
+document.getElementById('p3-copy-code').addEventListener('click', async () => {
+    const codeField = document.getElementById('p3-arduino-code');
+    const status = document.getElementById('p3-copy-status');
+
+    try {
+      await navigator.clipboard.writeText(codeField.value);
+      status.textContent = 'Arduino code copied successfully!';
+    } catch {
+      codeField.focus();
+      codeField.select();
+
+      if (document.execCommand('copy')) {
+        status.textContent = 'Arduino code copied successfully!';
+      } else {
+        status.textContent = 'Press Ctrl+C to copy the selected code.';
+      }
+    }
+  });
+
+document.getElementById('p3-check-prediction')
+  .addEventListener('click', checkP3Prediction);
+
+})();
+</script>
+
 </body>
 
 </html>
