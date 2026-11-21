@@ -3717,9 +3717,41 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
 </section>
 
+<section class="p1-card">
+
+  <h2>Predict, then Check</h2>
+
+  <p class="p1-secondary">
+    With Kp = 9, Ki = 0 and Kd = 0,
+    what happens to oscillations when Ts
+    increases from 0.02 s to 0.30 s?
+  </p>
+
+  <label class="p1-field" for="p3-prediction">
+    Your Prediction:
+
+    <select id="p3-prediction" class="p1-prediction">
+      <option value="">Choose your prediction</option>
+      <option value="increase">Oscillations increase</option>
+      <option value="decrease">Oscillations decrease</option>
+      <option value="same">Almost no change</option>
+    </select>
+  </label>
+
+  <button
+    id="p3-check-prediction"
+    class="p1-action-button"
+    type="button">
+    Check with Simulation
+  </button>
+
+  <p id="p3-prediction-feedback" class="p1-feedback">
+    Choose a prediction before checking.
+  </p>
+
+</section>
 
 </template>
-
 
 <script>
 (() => {
@@ -4107,25 +4139,72 @@ void loop() {
   document.getElementById('p3-arduino-code').value = code;
 }
 
+function checkP3Prediction() {
+
+  const prediction =
+    document.getElementById('p3-prediction').value;
+
+  const feedback =
+    document.getElementById('p3-prediction-feedback');
+
+  if (!prediction) {
+    feedback.textContent = 'Please choose a prediction first.';
+    feedback.removeAttribute('data-result');
+    return;
+  }
+
+  // Compare two sampling times using the same controller
+  const smallTs = simulateP3(0.02, 9, 0, 0, false);
+  const largeTs = simulateP3(0.30, 9, 0, 0, false);
+
+  // Measure oscillation range during the last 3 seconds
+  function oscillationRange(result) {
+    const values = result.output.filter(
+      (_, i) => result.time[i] >= 5
+    );
+
+    return Math.max(...values) - Math.min(...values);
+  }
+
+  const rangeSmall = oscillationRange(smallTs);
+  const rangeLarge = oscillationRange(largeTs);
+  const difference = rangeLarge - rangeSmall;
+
+  const actual = difference > 0.1
+    ? 'increase'
+    : difference < -0.1
+      ? 'decrease'
+      : 'same';
+
+  const correct = prediction === actual;
+
+  feedback.dataset.result = correct ? 'correct' : 'incorrect';
+  feedback.textContent =
+    (correct ? 'Correct prediction! ' : 'Incorrect prediction. ') +
+    'Oscillation range at Ts = 0.02 s: ' +
+    rangeSmall.toFixed(3) +
+    '. At Ts = 0.30 s: ' +
+    rangeLarge.toFixed(3) +
+    '. Increasing Ts ' +
+    (actual === 'increase'
+      ? 'increases oscillations.'
+      : actual === 'decrease'
+        ? 'decreases oscillations.'
+        : 'causes almost no change.');
+
+}
+
 // Update graph whenever a slider changes
 ['p3-ts', 'p3-kp', 'p3-ki', 'p3-kd'].forEach(id => {
-
   document.getElementById(id).addEventListener('input', updateP3);
-
 });
 
 // Draw graph when Homework 2 is opened
-document.getElementById('open-homework-2')
-  .addEventListener('click', updateP3);
-  
+document.getElementById('open-homework-2').addEventListener('click', updateP3);
 // Update simulation when Anti-Windup changes
-document.getElementById('p3-anti-windup')
-  .addEventListener('change', updateP3);
+document.getElementById('p3-anti-windup').addEventListener('change', updateP3);
 
-
-document.getElementById('p3-copy-code')
-  .addEventListener('click', async () => {
-
+document.getElementById('p3-copy-code').addEventListener('click', async () => {
     const codeField = document.getElementById('p3-arduino-code');
     const status = document.getElementById('p3-copy-status');
 
@@ -4143,6 +4222,9 @@ document.getElementById('p3-copy-code')
       }
     }
   });
+
+document.getElementById('p3-check-prediction')
+  .addEventListener('click', checkP3Prediction);
 
 })();
 </script>
