@@ -3551,7 +3551,7 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 </script>
 
 
-// P3: Digital PID 
+<!--P3: Digital PID--> 
 <template id="p3-layout">
 
   <hr style="margin: 40px 0; border: 1px solid #333;">
@@ -3581,12 +3581,12 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   </section>
 
-// P3: PID Gain Settings
+<!--P3: PID Gain Settings-->
 <section class="p1-card">
 
   <h2>PID Controller Gains</h2>
 
-  // Proportional Gain
+  <!--Proportional Gain-->
   <label class="p1-field" for="p3-kp">
     Proportional Gain (Kp):
     <span class="p1-value" id="p3-kp-value">1.0</span>
@@ -3602,7 +3602,7 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   <br>
 
-  // Integral Gain
+  <!--Integral Gain-->
   <label class="p1-field" for="p3-ki">
     Integral Gain (Ki):
     <span class="p1-value" id="p3-ki-value">0.0</span>
@@ -3618,7 +3618,7 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   <br>
 
-   // Derivative Gain
+   <!--Derivative Gain-->
   <label class="p1-field" for="p3-kd">
     Derivative Gain (Kd):
     <span class="p1-value" id="p3-kd-value">0.0</span>
@@ -3669,6 +3669,34 @@ gainSliders.forEach(id => {
   });
 
 });
+
+
+// P3: Digital PID calculation
+function calculateDigitalPID(error, previousError, errorSum, Ts, Kp, Ki, Kd) {
+
+  // Accumulate the current error
+  const newErrorSum = errorSum + error;
+
+  // Proportional term
+  const P = Kp * error;
+
+  // Integral term
+  const I = Ki * Ts * newErrorSum;
+
+  // Derivative term
+  const D = Kd * (error - previousError) / Ts;
+
+  // Total PID control signal
+  const u = P + I + D;
+
+  return {
+    control: u,
+    newErrorSum: newErrorSum,
+    P: P,
+    I: I,
+    D: D
+  };
+}
 
 
 })();
