@@ -3589,6 +3589,48 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
       Adjust the PID gains to satisfy all targets.
     </p>
   </section>
+
+  
+<!-- P4: PID Controller Settings -->
+<section class="p1-card">
+  <h2>PID Controller Settings</h2>
+
+  <div class="p1-controls">
+    <label class="p1-field" for="p4-kp">
+      Proportional Gain (Kp)
+      <output id="p4-kp-value">1.0</output>
+      <input id="p4-kp" type="range"
+             min="0" max="20" step="0.1" value="1">
+    </label>
+
+    <label class="p1-field" for="p4-ki">
+      Integral Gain (Ki)
+      <output id="p4-ki-value">0.0</output>
+      <input id="p4-ki" type="range"
+             min="0" max="20" step="0.1" value="0">
+    </label>
+
+    <label class="p1-field" for="p4-kd">
+      Derivative Gain (Kd)
+      <output id="p4-kd-value">0.0</output>
+      <input id="p4-kd" type="range"
+             min="0" max="20" step="0.1" value="0">
+    </label>
+  </div>
+</section>
+
+<!-- P4: Response Plot -->
+<section class="p1-card">
+  <h2>Output vs. Setpoint</h2>
+  <div id="p4-response-plot"
+       class="p1-response-chart"
+       role="img"
+       aria-label="PID tuning response plot">
+  </div>
+  <p class="p1-secondary">
+    The simulation will be connected in the next stage.
+  </p>
+</section>
 </template>
 
 <!-- P4 JavaScript -->
@@ -3650,6 +3692,29 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
   }
 
   newPlantButton.addEventListener('click', generateRandomPlant);
+  
+  // P4: Update PID slider values
+  ['kp', 'ki', 'kd'].forEach(gain => {
+    const slider = document.getElementById('p4-' + gain);
+    const valueLabel = document.getElementById('p4-' + gain + '-value');
+
+    slider.addEventListener('input', () => {
+      valueLabel.textContent = Number(slider.value).toFixed(1);
+    });
+  });
+
+  // P4: Prepare the response plot
+  Plotly.newPlot('p4-response-plot', [], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0' },
+    xaxis: { title: 'Time (s)' },
+    yaxis: { title: 'Output y(t)' },
+    margin: { t: 30, b: 50, l: 60, r: 20 }
+  }, {
+    responsive: true,
+    displaylogo: false
+  });
 })();
 </script>
  
