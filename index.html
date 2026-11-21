@@ -3631,6 +3631,37 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
     The simulation will be connected in the next stage.
   </p>
 </section>
+
+<!-- P4: Performance Metrics -->
+<section class="p1-card">
+  <h2>Performance Metrics</h2>
+
+  <p class="p1-secondary">
+    Check whether your PID settings meet the challenge targets.
+  </p>
+
+  <div class="p1-metrics">
+
+    <div class="p1-metric">
+      <span>Overshoot</span>
+      <strong id="p4-overshoot">—</strong>
+      <small id="p4-overshoot-status">Not tested</small>
+    </div>
+
+    <div class="p1-metric">
+      <span>Settling Time</span>
+      <strong id="p4-settling-time">—</strong>
+      <small id="p4-settling-status">Not tested</small>
+    </div>
+
+    <div class="p1-metric">
+      <span>Steady-State Error</span>
+      <strong id="p4-steady-state-error">—</strong>
+      <small id="p4-error-status">Not tested</small>
+    </div>
+
+  </div>
+</section>
 </template>
 
 <!-- P4 JavaScript -->
