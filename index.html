@@ -3637,6 +3637,23 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
 <section class="p1-card">
 
+  <h2>Anti-Windup Control</h2>
+
+  <label for="p3-anti-windup">
+    <input type="checkbox" id="p3-anti-windup">
+    Enable Anti-Windup
+  </label>
+
+  <p class="p1-secondary">
+    Prevents excessive integral accumulation
+    when the control signal reaches its limit.
+  </p>
+
+</section>
+
+
+<section class="p1-card">
+
   <h2>Digital PID — Output vs. Setpoint</h2>
 
   <p class="p1-secondary">
@@ -3688,23 +3705,44 @@ gainSliders.forEach(id => {
 
 });
 
-
-// P3: Digital PID calculation
-function calculateDigitalPID(error, previousError, errorSum, Ts, Kp, Ki, Kd) {
-
-  // Accumulate the current error
-  const newErrorSum = errorSum + error;
+  
+// P3: Digital PID calculation with Anti-Windup
+function calculateDigitalPID(
+  error, previousError, errorSum,
+  Ts, Kp, Ki, Kd,
+  antiWindup = false,
+  controlLimit = Infinity
+) {
 
   // Proportional term
   const P = Kp * error;
 
-  // Integral term
-  const I = Ki * Ts * newErrorSum;
-
   // Derivative term
   const D = Kd * (error - previousError) / Ts;
 
-  // Total PID control signal
+  // Calculate the proposed integral accumulation
+  let newErrorSum = errorSum + error;
+
+  // Calculate the proposed control signal
+  const candidateI = Ki * Ts * newErrorSum;
+  const candidateU = P + candidateI + D;
+
+  // Stop integration if saturation would become worse
+  if (antiWindup && Ki > 0) {
+
+    if (
+      (candidateU > controlLimit && error > 0) ||
+      (candidateU < -controlLimit && error < 0)
+    ) {
+      newErrorSum = errorSum;
+    }
+
+  }
+
+  // Final integral term
+  const I = Ki * Ts * newErrorSum;
+
+  // Total PID output
   const u = P + I + D;
 
   return {
@@ -3718,7 +3756,7 @@ function calculateDigitalPID(error, previousError, errorSum, Ts, Kp, Ki, Kd) {
 
 
 // P3: Digital PID closed-loop simulation
-function simulateP3(Ts, Kp, Ki, Kd) {
+function simulateP3(Ts, Kp, Ki, Kd, antiWindup = false) {
 
   // First-order plant parameters
   const K = 1;
@@ -3748,15 +3786,20 @@ function simulateP3(Ts, Kp, Ki, Kd) {
     const error = setpoint - y;
 
     // Calculate PID control signal
-    const pid = calculateDigitalPID(
-      error,
-      previousError,
-      errorSum,
-      Ts,
-      Kp,
-      Ki,
-      Kd
-    );
+    
+// Calculate PID with Anti-Windup setting
+   const pid = calculateDigitalPID(
+    error,
+    previousError,
+    errorSum,
+    Ts,
+    Kp,
+    Ki,
+    Kd,
+    antiWindup,
+    controlLimit
+);
+
 
     // Update controller memory
     previousError = error;
@@ -3809,8 +3852,11 @@ function updateP3() {
   const Ki = Number(document.getElementById('p3-ki').value);
   const Kd = Number(document.getElementById('p3-kd').value);
 
+  // Read Anti-Windup state
+  const antiWindup =
+   document.getElementById('p3-anti-windup').checked;
   // Run simulation using slider values
-  const result = simulateP3(Ts, Kp, Ki, Kd);
+  const result = simulateP3(Ts, Kp, Ki, Kd, antiWindup);
 
   // Draw output and setpoint
   Plotly.react('p3-response-plot', [
@@ -3855,7 +3901,10 @@ function updateP3() {
 // Draw graph when Homework 2 is opened
 document.getElementById('open-homework-2')
   .addEventListener('click', updateP3);
-
+  
+// Update simulation when Anti-Windup changes
+document.getElementById('p3-anti-windup')
+  .addEventListener('change', updateP3);
 
 })();
 </script>
