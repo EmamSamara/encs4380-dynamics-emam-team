@@ -6,44 +6,618 @@
 <title>Dynamic Characteristics Toolkit - Module 1</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 
+
+<style>
+  .team-profiles {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 14px 12px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .team-profiles-title {
+    display: block;
+    margin-bottom: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .team-profiles-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .team-profiles-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    min-width: 100%;
+    width: max-content;
+    white-space: nowrap;
+    padding: 0 2px 5px;
+  }
+  .team-profiles-links a {
+    color: #61afef;
+    text-decoration: underline;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  #homework-entry {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    background: #121212;
+  }
+  #homework-entry[hidden] { display: none; }
+  .homework-panel {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 720px;
+    padding: 36px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 18px;
+  }
+  .homework-eyebrow {
+    margin: 0 0 12px;
+    color: #61afef;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .homework-panel h1 { margin: 0 0 10px; color: #fff; font-size: 30px; }
+  .homework-description { color: #b0b0b0; margin: 0 0 28px; line-height: 1.6; }
+  .homework-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .homework-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 24px;
+    min-height: 178px;
+    text-align: left;
+    background: #252525;
+    color: #e0e0e0;
+    border: 1px solid #414141;
+    border-radius: 12px;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .homework-option:hover { border-color: #61afef; background: #2c3239; }
+  .homework-option:focus-visible, .homework-back:focus-visible {
+    outline: 2px solid #61afef;
+    outline-offset: 3px;
+  }
+  .homework-option-label { color: #61afef; font-size: 12px; font-weight: bold; letter-spacing: 1px; }
+  .homework-option strong { font-size: 21px; color: #fff; line-height: 1.35; }
+  .homework-option-detail { color: #b0b0b0; font-size: 14px; line-height: 1.5; }
+  .homework-back {
+    padding: 10px 16px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #252525;
+    color: #e0e0e0;
+    font: inherit;
+    cursor: pointer;
+  }
+  #homework-switch { margin-bottom: 18px; }
+  @media (max-width: 560px) {
+    .homework-panel { padding: 24px; }
+    .homework-panel h1 { font-size: 25px; }
+    .homework-options { grid-template-columns: 1fr; }
+    .homework-option { min-height: 0; }
+  }
+
+  #homework-entry.showing-p1 { align-items: flex-start; }
+  #homework-entry.showing-p1 .homework-panel { max-width: 860px; }
+  .p1-back { margin-bottom: 26px; }
+  .p1-preview-note {
+    padding: 12px 14px;
+    margin: 0 0 20px;
+    border: 1px solid #46515b;
+    border-radius: 8px;
+    background: #24303b;
+    color: #c5d8e8;
+    font-size: 13px;
+  }
+  .p1-card {
+    margin-top: 16px;
+    padding: 22px;
+    background: #252525;
+    border: 1px solid #3d3d3d;
+    border-radius: 12px;
+  }
+  .p1-card h2 { color: #fff; margin: 0 0 20px; font-size: 19px; }
+  .p1-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .p1-field { display: flex; flex-direction: column; gap: 10px; color: #e0e0e0; font-size: 14px; }
+  .p1-field select, .p1-prediction {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    color: #e0e0e0;
+    background: #303030;
+    font: inherit;
+  }
+  .p1-field select:disabled, .p1-prediction:disabled { opacity: 0.65; }
+  .p1-model-description { color: #b0b0b0; font-size: 12px; line-height: 1.5; }
+  .p1-field input { width: 100%; margin: 2px 0; accent-color: #61afef; }
+  .p1-field input:disabled { opacity: 0.7; }
+  .p1-plant-params {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1e1e1e;
+  }
+  .p1-plant-params[hidden] { display: none; }
+  .p1-plant-params label { display: flex; flex-direction: column; gap: 9px; color: #e0e0e0; font-size: 13px; }
+  .p1-plant-params input { box-sizing: border-box; width: 100%; margin: 3px 0; accent-color: #61afef; }
+  .p1-value { color: #61afef; font-weight: bold; }
+  .p1-limit-setting {
+    margin-top: 18px;
+    padding: 14px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+  }
+  .p1-limit-setting label { display: block; color: #e0e0e0; font-size: 14px; }
+  .p1-limit-setting strong { color: #61afef; }
+  .p1-limit-setting input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 12px 0;
+    accent-color: #61afef;
+  }
+  .p1-limit-setting p { color: #b0b0b0; font-size: 13px; margin: 0; }
+  .p1-live-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding: 14px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+  }
+  .p1-live-preview span { color: #b0b0b0; font-size: 13px; line-height: 1.5; }
+  .p1-live-preview strong { color: #61afef; font-size: 22px; }
+  .p1-empty, .p1-plot-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 20px;
+    border: 1px dashed #555;
+    border-radius: 8px;
+    color: #929292;
+    background: #1e1e1e;
+    font-size: 14px;
+  }
+  .p1-empty { min-height: 104px; }
+  .p1-diagram-scroll {
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1b1b1b;
+  }
+  .p1-diagram-scroll:focus-visible { outline: 2px solid #61afef; outline-offset: 3px; }
+  .p1-diagram-svg { display: block; width: 100%; min-width: 760px; height: auto; }
+  .p1-diagram-note { margin: 12px 0 0; color: #b0b0b0; font-size: 12px; line-height: 1.6; }
+  .p1-plot-empty { min-height: 240px; }
+  .p1-response-chart {
+    box-sizing: border-box;
+    width: 100%;
+    height: 350px;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1e1e1e;
+  }
+  .p1-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .p1-metric {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 76px;
+    padding: 14px;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    background: #1e1e1e;
+  }
+  .p1-metric span { color: #b0b0b0; font-size: 12px; }
+  .p1-metric strong { color: #61afef; font-size: 20px; overflow-wrap: anywhere; }
+  .p1-ss-status { display: block; color: #b0b0b0; font-size: 11px; line-height: 1.5; }
+  .p1-metrics-note { margin: 15px 0 0; color: #b0b0b0; font-size: 12px; line-height: 1.6; }
+  .p1-prediction-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .p1-prediction-controls label { display: flex; flex-direction: column; gap: 9px; color: #e0e0e0; font-size: 14px; }
+  .p1-prediction-controls select { min-width: 0; }
+  .p1-action-button {
+    margin-top: 15px;
+    padding: 11px 16px;
+    border: 1px solid #61afef;
+    border-radius: 8px;
+    color: #fff;
+    background: #294a64;
+    cursor: pointer;
+    font: inherit;
+  }
+  .p1-action-button:hover { background: #356181; }
+  .p1-action-button:focus-visible { outline: 2px solid #98c379; outline-offset: 3px; }
+  .p1-feedback {
+    min-height: 22px;
+    margin: 14px 0 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #454545;
+    color: #d0d0d0;
+    background: #1e1e1e;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+  .p1-feedback[data-result="correct"], .p1-feedback[data-result="pass"] { border-color: #98c379; color: #b5dfa6; }
+  .p1-feedback[data-result="incorrect"], .p1-feedback[data-result="fail"] { border-color: #e5c07b; color: #e5c07b; }
+  .p1-validation-panel {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+  }
+  .p1-validation-panel h3 { margin: 0 0 12px; color: #fff; font-size: 17px; line-height: 1.5; }
+  .p1-validation-results { font-family: inherit; }
+  @media (max-width: 560px) {
+    .p1-prediction-controls { grid-template-columns: 1fr; }
+  }
+  .p1-secondary { color: #b0b0b0; font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
+  @media (max-width: 560px) {
+    #homework-entry { padding: 12px; }
+    .p1-card { padding: 16px; }
+    .p1-controls, .p1-plant-params { grid-template-columns: 1fr; }
+    .p1-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .p1-plot-empty { min-height: 210px; }
+    .p1-response-chart { height: 310px; }
+  }
+  #module4Check:hover{
+    background-color: #ccddec !important;
+  }
+   #module4NewSensor:hover{
+    background-color: #abaaaa !important;
+  }
+  #module4HintButton:hover{
+    background-color: #ab9fc4 !important;
+  }
+</style>
+
 </head>
 <body style="font-family: sans-serif; max-width: 850px; margin: auto; padding: 16px; background-color: #121212; color: #e0e0e0;">
 
+
+  <div id="homework-entry" role="dialog" aria-modal="true" aria-labelledby="homework-entry-title">
+    <div class="homework-panel">
+      <div id="homework-choices">
+        <p class="homework-eyebrow">ENCS4380 · Interfacing Techniques</p>
+        <h1 id="homework-entry-title">Choose a homework</h1>
+        <p class="homework-description">Select the toolkit you want to explore.</p>
+        <div class="homework-options">
+          <button class="homework-option" id="open-homework-1" type="button">
+            <span class="homework-option-label">HOMEWORK 01</span>
+            <strong>Dynamic Characteristics</strong>
+            <span class="homework-option-detail">First-order and second-order systems</span>
+          </button>
+          <button class="homework-option" id="open-homework-2" type="button">
+            <span class="homework-option-label">HOMEWORK 02</span>
+            <strong>PID Control Toolkit</strong>
+            <span class="homework-option-detail">Control modules coming soon</span>
+          </button>
+        </div>
+  <div class="team-profiles" style="margin-top: 24px; margin-bottom: 0;">
+    <strong class="team-profiles-title">Team Members GitHub Profiles</strong>
+    <div class="team-profiles-scroll">
+      <div class="team-profiles-links">
+        <a href="https://github.com/EmamSamara" target="_blank" rel="noopener noreferrer">Emam Samara</a>
+        <a href="https://github.com/OmarKhaldi1465" target="_blank" rel="noopener noreferrer">Omar Khaldi</a>
+        <a href="https://github.com/Fawzy-AbuKwaik" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a>
+        <a href="https://github.com/mustafa-fayed403" target="_blank" rel="noopener noreferrer">mustafa-fayed</a>
+        <a href="https://github.com/israa-masalmeh" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a>
+      </div>
+    </div>
+  </div>
+      </div>
+      <div id="homework-two-intro" hidden>
+        <div class="team-profiles" style="margin-bottom: 20px;">
+          <strong class="team-profiles-title">Team Members GitHub Profiles</strong>
+          <div class="team-profiles-scroll">
+            <div class="team-profiles-links">
+              <a href="https://github.com/EmamSamara" target="_blank" rel="noopener noreferrer">Emam Samara</a>
+              <a href="https://github.com/OmarKhaldi1465" target="_blank" rel="noopener noreferrer">Omar Khaldi</a>
+              <a href="https://github.com/Fawzy-AbuKwaik" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a>
+              <a href="https://github.com/mustafa-fayed403" target="_blank" rel="noopener noreferrer">mustafa-fayed</a>
+              <a href="https://github.com/israa-masalmeh" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a>
+            </div>
+          </div>
+        </div>
+        <!-- Homework 2 -> P1 Layout -->
+        <button class="homework-back p1-back" id="back-to-homeworks" type="button">← Choose another homework</button>
+        <p class="homework-eyebrow">Homework 02 · Control</p>
+        <h1 id="p1-page-title">P1 — PID Playground</h1>
+        <p class="homework-description">Explore and tune a PID controller with the first-order and second-order plant models from Homework 1.</p>
+        <div class="p1-preview-note">Switch between first-order and second-order plants. The PID gains, setpoint, and control limit update both plots.</div>
+
+
+        <section class="p1-card" aria-labelledby="p1-settings-title">
+          <h2 id="p1-settings-title">Controller Settings</h2>
+          <div class="p1-controls">
+            <label class="p1-field" for="p1-plant">
+              Plant Model
+              <select id="p1-plant">
+                <option value="first-order">First-order plant</option>
+                <option value="second-order">Second-order plant</option>
+              </select>
+              <span class="p1-model-description" id="p1-model-description">K = 1, τ = 1 s</span>
+            </label>
+            <label class="p1-field" for="p1-setpoint">
+              Setpoint Step <span class="p1-value">1.0</span>
+              <input id="p1-setpoint" type="range" min="0" max="5" step="0.1" value="1">
+            </label>
+            <label class="p1-field" for="p1-kp">
+              Proportional Gain (Kp) <span class="p1-value">1.0</span>
+              <input id="p1-kp" type="range" min="0" max="20" step="0.1" value="1">
+            </label>
+            <label class="p1-field" for="p1-ki">
+              Integral Gain (Ki) <span class="p1-value">0.0</span>
+              <input id="p1-ki" type="range" min="0" max="20" step="0.1" value="0">
+            </label>
+            <label class="p1-field" for="p1-kd">
+              Derivative Gain (Kd) <span class="p1-value">0.0</span>
+              <input id="p1-kd" type="range" min="0" max="20" step="0.1" value="0">
+            </label>
+          </div>
+          <div class="p1-plant-params" id="p1-first-order-params">
+            <label for="p1-gain">Plant Gain (K) <span class="p1-value">1.0</span>
+              <input id="p1-gain" type="range" min="0.5" max="5" step="0.5" value="1">
+            </label>
+            <label for="p1-tau">Time Constant (τ), seconds <span class="p1-value">1.0</span>
+              <input id="p1-tau" type="range" min="1" max="30" step="1" value="1">
+            </label>
+          </div>
+          <div class="p1-plant-params" id="p1-second-order-params" hidden>
+            <label for="p1-mass">Mass (m), kg <span class="p1-value">1.0</span>
+              <input id="p1-mass" type="range" min="0.5" max="5" step="0.5" value="1">
+            </label>
+            <label for="p1-damping">Damping (b), N·s/m <span class="p1-value">2.0</span>
+              <input id="p1-damping" type="range" min="0.5" max="10" step="0.5" value="2">
+            </label>
+            <label for="p1-stiffness">Stiffness (k), N/m <span class="p1-value">4.0</span>
+              <input id="p1-stiffness" type="range" min="1" max="20" step="1" value="4">
+            </label>
+          </div>
+          <div class="p1-limit-setting">
+            <label for="p1-control-limit">Control Signal Limit (±u): <strong id="p1-limit-value">10.0</strong></label>
+            <input id="p1-control-limit" type="range" min="1" max="20" step="0.5" value="10">
+            <p>The controller output is limited to −10.0 to +10.0.</p>
+          </div>
+          <div class="p1-live-preview" role="status" aria-live="polite">
+            <span id="p1-live-output-label">First-order simulated output at 5 s (K = 1, τ = 1 s, setpoint = 1.0)</span>
+            <strong id="p1-live-output">—</strong>
+          </div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-diagram-title">
+          <h2 id="p1-diagram-title">Closed-Loop Block Diagram</h2>
+          <div class="p1-diagram-scroll" id="p1-block-diagram" role="region" aria-label="PID closed-loop feedback diagram" tabindex="0">
+            <svg id="p1-diagram-svg" class="p1-diagram-svg" viewBox="0 0 980 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PID control loop with unity feedback">
+              <defs>
+                <marker id="p1-diagram-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#a6b9c8"/>
+                </marker>
+              </defs>
+              <g stroke="#a6b9c8" stroke-width="2.5" fill="none" stroke-linejoin="round">
+                <path d="M 130 133 H 161" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 207 133 H 250" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 466 133 H 513" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 655 133 H 703" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 900 133 H 962" marker-end="url(#p1-diagram-arrow)"/>
+                <path d="M 934 133 V 255 H 184 V 156" marker-end="url(#p1-diagram-arrow)"/>
+              </g>
+              <g stroke-width="2" stroke-linejoin="round">
+                <rect x="18" y="88" width="112" height="90" rx="10" fill="#28323a" stroke="#61afef"/>
+                <circle cx="184" cy="133" r="23" fill="#252525" stroke="#98c379"/>
+                <rect x="250" y="88" width="216" height="90" rx="10" fill="#2c303b" stroke="#61afef"/>
+                <rect x="513" y="88" width="142" height="90" rx="10" fill="#373025" stroke="#e5c07b"/>
+                <rect x="703" y="88" width="197" height="90" rx="10" fill="#2a3530" stroke="#98c379"/>
+              </g>
+              <g fill="#f0f0f0" font-family="Arial, sans-serif" text-anchor="middle">
+                <text x="74" y="119" font-size="17" font-weight="bold">Setpoint</text>
+                <text id="p1-diagram-setpoint" x="74" y="149" font-size="19">r = 1.0</text>
+                <text x="184" y="140" font-size="26">Σ</text>
+                <text x="171" y="100" font-size="22" fill="#98c379">+</text>
+                <text x="161" y="191" font-size="26" fill="#e06c75">−</text>
+                <text x="231" y="117" font-size="17">e(t)</text>
+                <text x="358" y="117" font-size="18" font-weight="bold">PID Controller</text>
+                <text id="p1-diagram-proportional-integral" x="358" y="143" font-size="15">Kp = 1.0  ·  Ki = 0.0</text>
+                <text id="p1-diagram-derivative" x="358" y="165" font-size="15">Kd = 0.0</text>
+                <text x="489" y="117" font-size="15">u<tspan baseline-shift="sub" font-size="11">raw</tspan></text>
+                <text x="584" y="119" font-size="18" font-weight="bold">Saturation</text>
+                <text id="p1-diagram-limits" x="584" y="150" font-size="15">±10.0</text>
+                <text x="679" y="117" font-size="17">u(t)</text>
+                <text id="p1-diagram-plant" x="802" y="119" font-size="18" font-weight="bold">First-Order Plant</text>
+                <text id="p1-diagram-transfer" x="802" y="150" font-size="14">G(s) = 1 / (s + 1)</text>
+                <text x="948" y="108" font-size="17">y(t)</text>
+                <text x="555" y="285" font-size="16" fill="#b0b0b0">Unity feedback: measured output y(t)</text>
+              </g>
+              <circle cx="934" cy="133" r="4.5" fill="#a6b9c8"/>
+            </svg>
+          </div>
+          <p class="p1-diagram-note">The output is fed back to the summing junction with negative feedback. The D term uses the measured output derivative to avoid a setpoint kick.</p>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-response-title">
+          <h2 id="p1-response-title">Output vs. Setpoint</h2>
+          <div class="p1-response-chart" id="p1-response-plot" role="img" aria-label="Closed-loop output and setpoint over time"></div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-control-title">
+          <h2 id="p1-control-title">Control Signal u(t) &amp; Limits</h2>
+          <div class="p1-response-chart" id="p1-control-plot" role="img" aria-label="PID control signal with upper and lower saturation limits"></div>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-metrics-title">
+          <h2 id="p1-metrics-title">Performance Metrics</h2>
+          <div class="p1-metrics">
+            <div class="p1-metric"><span>Rise Time</span><strong id="p1-rise-time">—</strong></div>
+            <div class="p1-metric"><span>Overshoot</span><strong id="p1-overshoot">—</strong></div>
+            <div class="p1-metric"><span>Settling Time</span><strong id="p1-settling-time">—</strong></div>
+            <div class="p1-metric"><span>Steady-State Error</span><strong id="p1-steady-state-error">—</strong><small id="p1-ss-status" class="p1-ss-status"></small></div>
+          </div>
+          <p class="p1-metrics-note">Rise Time: 10–90% of the predicted final output. Settling Time: within ±5%. Overshoot is measured over the displayed time window. Steady-State Error is the predicted final error for a stable loop; unsettled and unstable cases are labeled.</p>
+        </section>
+
+        <section class="p1-card" aria-labelledby="p1-prediction-title">
+          <h2 id="p1-prediction-title">Predict, then Check</h2>
+          <p class="p1-secondary">Choose a change, predict the result, then run two simulations to check your answer. The main controls will switch to the new settings so you can explore the plots.</p>
+          <div class="p1-prediction-controls">
+            <label for="p1-prediction-scenario">What will you change?
+              <select id="p1-prediction-scenario" class="p1-prediction">
+                <option value="gain">First-order: increase Kp from 1 to 9. What happens to steady-state error?</option>
+                <option value="integral">First-order: add Ki = 1 (Kp = 1). What happens to steady-state error?</option>
+                <option value="derivative">Second-order: increase Kd from 0 to 2 (Kp = 3). What happens to overshoot?</option>
+                <option value="setpoint">First-order: increase setpoint from 1 to 2 (Kp = 2). What happens to output?</option>
+              </select>
+            </label>
+            <label for="p1-prediction-answer">Your prediction
+              <select id="p1-prediction-answer" class="p1-prediction">
+                <option value="">Choose an answer</option>
+                <option value="increase">It will increase</option>
+                <option value="decrease">It will decrease</option>
+                <option value="same">It will stay about the same</option>
+              </select>
+            </label>
+          </div>
+          <button id="p1-check-prediction" class="p1-action-button" type="button">Check with simulation</button>
+          <p id="p1-prediction-feedback" class="p1-feedback" role="status" aria-live="polite">Select your prediction before checking.</p>
+
+          <div class="p1-validation-panel">
+            <h3>Reference Validation — G(s) = 1 / (s + 1)</h3>
+            <p class="p1-secondary">Run two fixed numerical checks: P-only with Kp = 9, and PI with Kp = 1, Ki = 1. These checks do not change the current playground sliders.</p>
+            <button id="p1-run-validation" class="p1-action-button" type="button">Run P and PI validation</button>
+            <div id="p1-validation-results" class="p1-feedback p1-validation-results" role="status" aria-live="polite">Validation has not been run.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <button class="homework-back" id="homework-switch" type="button" hidden>← Choose another homework</button>
+
+  <div class="team-profiles" style="margin-bottom: 18px;">
+    <strong class="team-profiles-title">Team Members GitHub Profiles</strong>
+    <div class="team-profiles-scroll">
+      <div class="team-profiles-links">
+        <a href="https://github.com/EmamSamara" target="_blank" rel="noopener noreferrer">Emam Samara</a>
+        <a href="https://github.com/OmarKhaldi1465" target="_blank" rel="noopener noreferrer">Omar Khaldi</a>
+        <a href="https://github.com/Fawzy-AbuKwaik" target="_blank" rel="noopener noreferrer">Fawzy-AbuKwaik</a>
+        <a href="https://github.com/mustafa-fayed403" target="_blank" rel="noopener noreferrer">mustafa-fayed</a>
+        <a href="https://github.com/israa-masalmeh" target="_blank" rel="noopener noreferrer">Israa Masalmeh</a>
+      </div>
+    </div>
+  </div>
+
   <h1 style="color: #ffffff;">Module 1: First-Order Time Response</h1>
-  <p style="color: #b0b0b0;">Tests first-order sensor dynamics under step and ramp inputs ($\tau\dot{y} + y = Kx$).</p>
+  <p style="color: #b0b0b0;">Explore a first-order sensor under step and ramp inputs: <strong>τ dy/dt + y = Kx</strong>, with transfer function <strong>G(s) = K/(τs + 1)</strong>.</p>
 
   <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;">
     <h3 style="color: #ffffff; margin-top: 0;">Controls</h3>
-    
-    <label>Input Type: </label>
+
+    <label for="inputType">Input Type: </label>
     <select id="inputType" style="padding: 5px; margin-bottom: 10px; background-color: #2d2d2d; color: #ffffff; border: 1px solid #444; border-radius: 4px;">
       <option value="step">Step Input</option>
       <option value="ramp">Ramp Input</option>
     </select>
     <br><br>
 
-    <label>Gain (K): <b id="kValue" style="color: #61afef;">1</b></label><br>
+    <label for="gainK">Gain (K): <b id="kValue" style="color: #61afef;">1</b></label><br>
     <input id="gainK" type="range" min="0.5" max="5" step="0.5" value="1" style="width:100%"><br><br>
 
-    <label>Time Constant (τ): <b id="tauValue" style="color: #61afef;">10</b> s</label><br>
+    <label for="tau">Time Constant (τ): <b id="tauValue" style="color: #61afef;">10</b> s</label><br>
     <input id="tau" type="range" min="1" max="30" step="1" value="10" style="width:100%">
   </div>
 
-  <!-- Main Response Plot -->
-  <div id="plot" style="width:100%; height:330px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
-
-  <!-- Error Fraction Log Plot (Appears for Step Input) -->
-  <div id="errorPlotContainer" style="margin-top: 20px;">
-    <div id="errorPlot" style="width:100%; height:300px; background: #1e1e1e; border-radius: 8px; padding: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333;"></div>
+  <!-- Module 1: Predict, then check (before moving a K or τ slider) -->
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;">Predict, then check</h3>
+    <p style="color: #b0b0b0;">Predict what will happen <strong>before</strong> changing K or τ, then move the slider to check your answer.</p>
+    <label for="prediction1">Your prediction: </label>
+    <select id="prediction1" style="padding: 7px; max-width: 100%; background: #2d2d2d; color: #ffffff; border: 1px solid #444; border-radius: 4px;">
+      <option value="">Choose a prediction first</option>
+      <option value="slower">Increasing τ makes the response slower (larger lag)</option>
+      <option value="faster">Decreasing τ makes the response faster (smaller lag)</option>
+      <option value="higher">Increasing K increases the output magnitude</option>
+      <option value="lower">Decreasing K decreases the output magnitude</option>
+    </select>
+    <p id="prediction1Feedback" aria-live="polite" style="margin-bottom: 0; font-weight: bold; color: #b0b0b0;">Select a prediction, then move the corresponding slider.</p>
   </div>
 
-  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
-    <h3 style="color: #ffffff; margin-top: 0;" id="validationTitle">Validation Check (First-Order Step)</h3>
-    <p id="validationResult" style="font-weight: bold; color: #61afef; line-height: 1.6;"></p>
+  <!-- Module 1: live response plot -->
+  <div id="plot" style="box-sizing: border-box; width:100%; height:390px; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+
+  <!-- Module 1: error fraction, logarithmic y-axis, and measured ln(error) slope -->
+  <div id="errorPlotContainer" style="margin-top: 20px;">
+    <div id="errorPlot" style="box-sizing: border-box; width:100%; height:330px; background: #1e1e1e; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+  </div>
+
+  <div style="background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 20px;">
+    <h3 style="color: #ffffff; margin-top: 0;" id="validationTitle">Validation Check 1 (First-Order Step)</h3>
+    <div id="validationResult" aria-live="polite" style="line-height: 1.6;"></div>
   </div>
 
 <script>
-const A = 1; // Input amplitude scale
+// Module 1 only: closed-form first-order step/ramp response.
+const A = 1; // Step amplitude; ramp input slope is A units/s.
+const module1PlotConfig = { responsive: true, displaylogo: false, displayModeBar: false };
+const previousModule1Values = {
+  tau: Number(document.getElementById('tau').value),
+  K: Number(document.getElementById('gainK').value)
+};
+
+function module1PassLabel(passed) {
+  return `<strong style="color: ${passed ? '#98c379' : '#e06c75'};">${passed ? 'PASS' : 'FAIL'}</strong>`;
+}
+
+// Actual slope of ln(error fraction) against time; it should equal -1/τ.
+function module1LogErrorSlope(time, errorFraction) {
+  const n = time.length;
+  const meanTime = time.reduce((sum, value) => sum + value, 0) / n;
+  const logErrors = errorFraction.map(value => Math.log(value));
+  const meanLog = logErrors.reduce((sum, value) => sum + value, 0) / n;
+  let numerator = 0;
+  let denominator = 0;
+  for (let i = 0; i < n; i++) {
+    numerator += (time[i] - meanTime) * (logErrors[i] - meanLog);
+    denominator += (time[i] - meanTime) ** 2;
+  }
+  return numerator / denominator;
+}
 
 function draw() {
   const tau = parseFloat(document.getElementById('tau').value);
@@ -56,90 +630,163 @@ function draw() {
   const t = [];
   const y = [];
   const errorFraction = [];
-  
+  const input = [];
+  const desiredOutput = [];
+
   for (let i = 0; i <= 300; i++) {
     const ti = (5 * tau * i) / 300;
     t.push(ti);
 
     if (inputType === 'step') {
-      // Step response: y(t) = K * A * (1 - e^(-t/tau))
+      // Step: x(t) = A; y(t) = K*A*(1 - exp(-t/τ)).
       const yi = K * A * (1 - Math.exp(-ti / tau));
       y.push(yi);
-      // Error fraction for step: (Desired - Actual) / Desired = e^(-t/tau)
-      // To avoid log(0), clamp minimum error fraction
-      const ef = Math.max(Math.exp(-ti / tau), 1e-6);
-      errorFraction.push(ef);
+      input.push(A);
+      desiredOutput.push(K * A);
+      // Error fraction = (KA - y(t))/KA; a positive value is needed for log display.
+      errorFraction.push(Math.max((K * A - yi) / (K * A), 1e-12));
     } else {
-      // Ramp response: y(t) = K * A * (ti - tau + tau * exp(-ti/tau))
+      // Ramp: x(t) = A*t; y(t) = KA*(t - τ + τ*exp(-t/τ)).
+      input.push(A * ti);
+      desiredOutput.push(K * A * ti);
       y.push(K * A * (ti - tau + tau * Math.exp(-ti / tau)));
     }
   }
 
+  const commonLayout = {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0', size: 11 },
+    xaxis: { title: { text: 'Time t (s)', standoff: 8 }, gridcolor: '#333333', zerolinecolor: '#555555', automargin: true },
+    yaxis: { title: { text: 'Amplitude', standoff: 7 }, gridcolor: '#333333', zerolinecolor: '#555555', automargin: true },
+    margin: { t: 52, b: 74, l: 64, r: 18 },
+    legend: { orientation: 'h', x: 0, y: -0.26, font: { size: 10 } },
+    hovermode: 'x unified'
+  };
+
   if (inputType === 'step') {
-    document.getElementById('validationTitle').textContent = "Validation Check 1 (First-Order Step & Error Fraction)";
-    const valAtTau = K * A * (1 - Math.exp(-1)); 
-    const valAt3Tau = K * A * (1 - Math.exp(-3)); 
-    
-    document.getElementById('validationResult').innerHTML = 
-      `At t = τ (${tau}s): y = ${valAtTau.toFixed(3)} (Expected: ~${(0.632 * K * A).toFixed(3)}) [63.2%]<br>` +
-      `At t = 3τ (${3*tau}s): y = ${valAt3Tau.toFixed(3)} (Expected: ~${(0.95 * K * A).toFixed(3)}) [95%] — <b style="color: #98c379;">PASS</b><br>` +
-      `<span style="color: #e06c75;">Error-Fraction Plot:</span> Logarithmic axis verified with theoretical slope = -1/τ (-${(1/tau).toFixed(3)} s⁻¹).`;
+    document.getElementById('validationTitle').textContent = 'Validation Check 1 (First-Order Step & Log Error)';
+    // With 300 samples over 5τ, index 60 is τ and index 180 is 3τ.
+    const actualAtTau = y[60];
+    const actualAt3Tau = y[180];
+    const expectedAtTau = 0.632 * K * A;
+    const expectedAt3Tau = 0.95 * K * A;
+    const actualSlope = module1LogErrorSlope(t, errorFraction);
+    const expectedSlope = -1 / tau;
+    const toleranceAtTau = 0.005 * K * A;
+    const toleranceAt3Tau = 0.005 * K * A;
+    const slopeTolerance = 0.001 * Math.abs(expectedSlope);
+    const checkAtTau = Math.abs(actualAtTau - expectedAtTau) <= toleranceAtTau;
+    const checkAt3Tau = Math.abs(actualAt3Tau - expectedAt3Tau) <= toleranceAt3Tau;
+    const slopeCheck = Math.abs(actualSlope - expectedSlope) <= slopeTolerance;
+
+    document.getElementById('validationResult').innerHTML = `
+      <p style="margin-top: 0; color: #b0b0b0;">Values below are calculated from the plotted response, not hard-coded PASS labels.</p>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse: collapse; text-align: left; min-width: 440px; font-size: 13px;">
+          <thead><tr style="border-bottom:1px solid #444;"><th style="padding: 7px 5px;">Check</th><th style="padding: 7px 5px;">Expected</th><th style="padding: 7px 5px;">Calculated</th><th style="padding: 7px 5px;">Result</th></tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #333;"><td style="padding: 7px 5px;">y(τ), 63.2%</td><td style="padding: 7px 5px;">${expectedAtTau.toFixed(5)}</td><td style="padding: 7px 5px;">${actualAtTau.toFixed(5)}</td><td style="padding: 7px 5px;">${module1PassLabel(checkAtTau)}</td></tr>
+            <tr style="border-bottom:1px solid #333;"><td style="padding: 7px 5px;">y(3τ), 95%</td><td style="padding: 7px 5px;">${expectedAt3Tau.toFixed(5)}</td><td style="padding: 7px 5px;">${actualAt3Tau.toFixed(5)}</td><td style="padding: 7px 5px;">${module1PassLabel(checkAt3Tau)}</td></tr>
+            <tr><td style="padding: 7px 5px;">Slope of ln(error fraction) vs. t</td><td style="padding: 7px 5px;">${expectedSlope.toFixed(6)} s⁻¹</td><td style="padding: 7px 5px;">${actualSlope.toFixed(6)} s⁻¹</td><td style="padding: 7px 5px;">${module1PassLabel(slopeCheck)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-bottom:0; color:#b0b0b0;">Step input x(t) = ${A}; steady-state output = KA = ${(K * A).toFixed(2)}. Markers show t = τ = ${tau} s and t = 3τ = ${3 * tau} s. The error fraction is (KA − y)/KA; its natural-log slope is −1/τ.</p>`;
 
     document.getElementById('errorPlotContainer').style.display = 'block';
 
-    // Main Plot layout
-    const layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Step Response y(t)', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
+    const stepLayout = {
+      ...commonLayout,
+      title: { text: 'Step Response', font: { size: 14 } },
+      yaxis: { ...commonLayout.yaxis, title: { text: 'Output y(t)', standoff: 7 }, rangemode: 'tozero' },
+      shapes: [
+        { type: 'line', x0: tau, x1: tau, y0: 0, y1: actualAtTau, line: { color: '#e5c07b', width: 1.5, dash: 'dot' } },
+        { type: 'line', x0: 3 * tau, x1: 3 * tau, y0: 0, y1: actualAt3Tau, line: { color: '#98c379', width: 1.5, dash: 'dot' } }
+      ]
     };
-    Plotly.react('plot', [{ x: t, y: y, mode: 'lines', name: 'Response', line: { color: '#61afef', width: 3 } }], layout);
+    Plotly.react('plot', [
+      { x: t, y, mode: 'lines', name: 'Sensor response', line: { color: '#61afef', width: 3 } },
+      { x: t, y: desiredOutput, mode: 'lines', name: 'Final value KA', line: { color: '#b0b0b0', width: 1.5, dash: 'dash' } },
+      { x: [tau, 3 * tau], y: [actualAtTau, actualAt3Tau], mode: 'markers+text', name: '63.2% / 95% points', text: ['63.2% at τ', '95% at 3τ'], textposition: ['bottom right', 'top center'], textfont: { color: '#e5c07b', size: 11 }, marker: { color: ['#e5c07b', '#98c379'], size: 10, line: { width: 1, color: '#1e1e1e' } }, hovertemplate: 't = %{x:.3f} s<br>y = %{y:.5f}<extra></extra>' }
+    ], stepLayout, module1PlotConfig);
 
-    // Error Fraction Log Plot layout
     const errorLayout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Error-Fraction Plot (Logarithmic Axis, Slope = -1/τ)', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'Error Fraction (Log Scale)', type: 'log', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
+      ...commonLayout,
+      title: { text: 'Error Fraction (Log Axis)', font: { size: 14 } },
+      yaxis: { title: { text: 'Error fraction (log scale)', standoff: 6 }, type: 'log', gridcolor: '#333333', zerolinecolor: '#555555', automargin: true },
+      margin: { t: 52, b: 64, l: 72, r: 18 },
+      showlegend: false
     };
-    Plotly.react('errorPlot', [{ x: t, y: errorFraction, mode: 'lines', name: 'Error e(t)/A', line: { color: '#e06c75', width: 3 } }], errorLayout);
-
+    Plotly.react('errorPlot', [
+      { x: t, y: errorFraction, mode: 'lines', name: 'Error fraction', line: { color: '#e06c75', width: 3 }, hovertemplate: 't = %{x:.3f} s<br>Error fraction = %{y:.6f}<extra></extra>' }
+    ], errorLayout, module1PlotConfig);
   } else {
-    document.getElementById('validationTitle').textContent = "Ramp Response Analysis (Lag & Steady-State Error)";
-    // For ramp input x(t) = t, steady state output y(ss) = K(t - tau) -> Error = K*tau
+    document.getElementById('validationTitle').textContent = 'Ramp Response Analysis (Lag & Steady-State Error)';
+    // For x(t)=A*t, output approaches KA*(t-τ). The asymptotic tracking error relative to Kx is KAτ.
     const rampLag = tau;
-    const ssError = K * tau;
-
-    document.getElementById('validationResult').innerHTML = 
-      `<b style="color: #98c379;">Ramp Lag = τ = ${tau} s</b><br>` +
-      `<b style="color: #e5c07b;">Steady-State Error (e_ss) = K × τ = ${ssError.toFixed(2)}</b><br>` +
-      `The output tracks the input with a constant time delay equal to the time constant τ.`;
+    const ssError = K * A * tau;
+    const errorAtEnd = desiredOutput[desiredOutput.length - 1] - y[y.length - 1];
+    document.getElementById('validationResult').innerHTML = `
+      <p style="margin-top:0;"><strong style="color: #98c379;">Ramp time lag = τ = ${rampLag} s</strong></p>
+      <p><strong style="color: #e5c07b;">Steady-state tracking error relative to Kx(t): e<sub>ss</sub> = KAτ = ${ssError.toFixed(3)}</strong></p>
+      <p style="color:#b0b0b0;">Input: x(t) = ${A}t; ideal gain-scaled output: Kx(t) = ${K * A}t; actual output: y(t) = KA[t − τ + τe<sup>−t/τ</sup>].</p>
+      <p style="color:#b0b0b0; margin-bottom:0;">At t = 5τ (${5 * tau} s), the plotted tracking error Kx − y = ${errorAtEnd.toFixed(3)}; it approaches ${ssError.toFixed(3)} as t increases. The steady-state time lag is τ.</p>`;
 
     document.getElementById('errorPlotContainer').style.display = 'none';
-
-    const layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#e0e0e0' },
-      title: { text: 'Ramp Response y(t) vs Input', font: { size: 14 } },
-      xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      yaxis: { title: 'y(t) (Ramp Response)', gridcolor: '#333333', zerolinecolor: '#555555' },
-      margin: { t: 30, b: 40, l: 50, r: 20 }
+    const rampLayout = {
+      ...commonLayout,
+      title: { text: 'Ramp Input and Sensor Output', font: { size: 14 } },
+      yaxis: { ...commonLayout.yaxis, title: { text: 'Input / output', standoff: 7 }, rangemode: 'tozero' }
     };
-    Plotly.react('plot', [{ x: t, y: y, mode: 'lines', name: 'Ramp Response', line: { color: '#d19a66', width: 3 } }], layout);
+    Plotly.react('plot', [
+      { x: t, y: input, mode: 'lines', name: 'Input x(t)', line: { color: '#b0b0b0', width: 1.5, dash: 'dot' } },
+      { x: t, y: desiredOutput, mode: 'lines', name: 'Ideal Kx(t)', line: { color: '#98c379', width: 2, dash: 'dash' } },
+      { x: t, y, mode: 'lines', name: 'Sensor output y(t)', line: { color: '#d19a66', width: 3 } }
+    ], rampLayout, module1PlotConfig);
   }
 }
 
-document.getElementById('tau').addEventListener('input', draw);
-document.getElementById('gainK').addEventListener('input', draw);
+function module1CheckPrediction(changedParameter) {
+  const input = document.getElementById(changedParameter === 'tau' ? 'tau' : 'gainK');
+  const value = Number(input.value);
+  const previous = previousModule1Values[changedParameter];
+  if (value === previous) return;
+
+  const actual = changedParameter === 'tau'
+    ? (value > previous ? 'slower' : 'faster')
+    : (value > previous ? 'higher' : 'lower');
+  const messages = {
+    slower: 'Increasing τ slows the response and increases ramp lag.',
+    faster: 'Decreasing τ speeds the response and decreases ramp lag.',
+    higher: 'Increasing K raises the output magnitude (for the same input).',
+    lower: 'Decreasing K lowers the output magnitude (for the same input).'
+  };
+  const prediction = document.getElementById('prediction1');
+  const feedback = document.getElementById('prediction1Feedback');
+  if (prediction.value) {
+    const correct = prediction.value === actual;
+    feedback.textContent = `${correct ? 'Correct! ' : 'Not quite. '}${messages[actual]} Select a new prediction before the next move.`;
+    feedback.style.color = correct ? '#98c379' : '#e5c07b';
+    prediction.value = ''; // Require a new guess before the next movement.
+  } else {
+    feedback.textContent = `${messages[actual]} Choose a prediction before your next slider move.`;
+    feedback.style.color = '#b0b0b0';
+  }
+  previousModule1Values[changedParameter] = value;
+  draw();
+}
+
+document.getElementById('tau').addEventListener('input', () => module1CheckPrediction('tau'));
+document.getElementById('gainK').addEventListener('input', () => module1CheckPrediction('K'));
 document.getElementById('inputType').addEventListener('change', draw);
+document.getElementById('prediction1').addEventListener('change', () => {
+  const feedback = document.getElementById('prediction1Feedback');
+  feedback.textContent = document.getElementById('prediction1').value
+    ? 'Prediction chosen. Now move the corresponding K or τ slider to check it.'
+    : 'Select a prediction, then move the corresponding slider.';
+  feedback.style.color = '#b0b0b0';
+});
 draw();
 </script>
 <!--MODULE 2-->
@@ -1689,7 +2336,2343 @@ validate3();
 draw3();
 </script>
 
+<!-- --- Module 4 --- -->
+<hr style="margin: 40px 0; border: 1px solid #333;">
+<h1 style="color: #ffffff;">Module 4: Guess the Sensor</h1>
+<label for="module4SensorSelect" style="color: #e0e0e0; display: block; margin-bottom: 8px;">Select Sensor Type:</label>
+<select id="module4SensorSelect" style="font-weight: bold; font-size:16px; background-color: #61afef; color: #121212; padding:10px; border: 1px solid #444; border-radius: 4px; margin-bottom: 16px;">
+  <option value="firstOrder">First-Order Sensor</option>
+  <option value="secondOrder">Second-Order Sensor</option>
+  <option value="firstOrderSine">First-Order Sensor — Sine Input</option>
+</select>
+<p style="color: #b0b0b0;">Observe the response and estimate the sensor parameters.</p>
+<div id="module4Plot" style="background-color: #1e1e1e; height: 350px; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); border: 1px solid #333;"></div>
+
+<div style="background: #1e1e1e; padding: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px;">
+  <p style="color:#e0e0e0; margin: 0 0 16px;"> Estimate the sensor parameters:</p>
+  
+  <div id="module4FirstOrderInputs" style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <div style="flex: 1 1 200px;">
+      <label for="module4TauGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Time constant τ (second): </label>
+      <input id="module4TauGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+    <div style="flex: 1 1 200px;">
+      <label for="module4KGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Gain K: </label>
+      <input id="module4KGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+  </div>
+
+  <div id="module4SecondOrderInputs" style="display: none; flex-wrap: wrap; gap: 16px;">
+    <div style="flex: 1 1 200px;">
+      <label for="module4ZetaGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Damping ratio ζ: </label>
+      <input id="module4ZetaGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+    <div style="flex: 1 1 200px;">
+      <label for="module4WnGuess" style="color:#e0e0e0; display: block; margin-bottom: 8px;">Natural angular frequency ωn (rad/s): </label>
+      <input id="module4WnGuess" type="number" min="0" step="any" style="background-color: #2d2d2d; color: #e0e0e0; padding:10px; border: 1px solid #444; border-radius: 4px; width: 100%; box-sizing: border-box;">
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;">
+    <button id="module4Check" type="button" style="font-weight: bold; background-color: #61afef; color: #121212; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Check Guess</button>
+    <button id="module4HintButton" type="button" style="font-weight: bold; background-color: #130f1a; color: #d8c4fa; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">Hint</button> 
+    <button id="module4NewSensor" type="button" style="font-weight: bold; background-color: #2d2929; color: #e0e0e0; border: 1px solid #444; padding: 10px 16px; cursor:pointer; border-radius: 4px;  transition: background-color 0.2s;">New Sensor</button>
+  </div>
+
+  <div id="module4HintText" style="margin-top: 12px; color:#b0b0b0"></div>
+  <div id="module4Result" style="margin-top: 12px;"></div>
+  <div id ="module4Score" style="margin-top: 12px;"></div>
+</div>
+
+<script>
+  let module4TrueTau = 4;
+  let module4RoundScored = false;
+  let module4RoundsPlayed = 0;
+  let module4TotalScore = 0;
+  let module4TrueK = 1; // Assuming K is initially 1 for simplicity
+  const module4InputTau = document.getElementById('module4TauGuess');
+  const module4CheckResult = document.getElementById('module4Result');
+  const module4PlotElement = document.getElementById('module4Plot');
+  const module4ScoreElement = document.getElementById('module4Score');
+  module4ScoreElement.textContent = 'Score: 0 / 0';
+  const module4CheckButton = document.getElementById('module4Check');
+  const module4HintButton = document.getElementById('module4HintButton');
+  const module4HintText = document.getElementById('module4HintText');
+  const module4InputK = document.getElementById('module4KGuess');
+  let module4Noise = [];
+  const module4SensorSelect = document.getElementById('module4SensorSelect');
+
+  let module4TrueZeta = 0.5; // Default damping ratio for second-order sensor
+  let module4TrueWn = 2; // Default natural frequency for second-order sensor
+  const module4FirstOrderInputs = document.getElementById('module4FirstOrderInputs');
+  const module4SecondOrderInputs = document.getElementById('module4SecondOrderInputs');
+  const module4InputZeta = document.getElementById('module4ZetaGuess');
+  const module4InputWn = document.getElementById('module4WnGuess');
+
+  let module4Omega = 1;
+
+    function drawModule4(guess1 = null, guess2 = null) {
+      const module4Time = [];
+      const module4Output = [];
+      const module4GuessOutput = [];
+      const module4MeasuredOutput = [];
+      let module4SecondOrderGuessOutput = [];
+      for(let i = 0; i <= 300; i++) {
+        const ti = i / 10;
+        module4Time.push(ti);
+      }
+      const sensorType = module4SensorSelect.value;
+      let module4SecondOrderOutput = [];
+      if (sensorType === 'secondOrder') { 
+        module4SecondOrderOutput = stepResponse(module4Time, module4TrueZeta, module4TrueWn, 1, 1);
+      }
+      if (sensorType === 'secondOrder' && guess1 !== null && guess2 !== null) {
+        module4SecondOrderGuessOutput = stepResponse(module4Time, guess1, guess2, 1, 1);
+      }
+
+      const module4SineAmplitude = module4TrueK / Math.sqrt(1 + Math.pow(module4Omega * module4TrueTau, 2));
+      const module4SinePhase = Math.atan(-module4Omega * module4TrueTau);
+      const module4SineInput = [];
+      let module4SineFirstOrderGuessAmplitude;
+      let module4SineFirstOrderGuessPhase;
+      if (sensorType === 'firstOrderSine' && guess1 !== null && guess2 !== null) {
+        module4SineFirstOrderGuessAmplitude = guess2 / Math.sqrt(1 + Math.pow(module4Omega * guess1, 2));
+        module4SineFirstOrderGuessPhase = Math.atan(-module4Omega * guess1);
+      }
+
+      for (let i = 0; i < module4Time.length; i++){
+        const ti = module4Time[i];
+        if (guess1 !== null && guess2 !== null){ // only calculate the guessed output if a guess has been added
+          if (sensorType === 'firstOrder'){
+            module4GuessOutput.push(guess2 * (1 - Math.exp(-ti / guess1)));
+          }
+          else if (sensorType === 'secondOrder'){
+            module4GuessOutput.push(module4SecondOrderGuessOutput[i]);
+          }
+          else if (sensorType === 'firstOrderSine') {
+            module4GuessOutput.push(module4SineFirstOrderGuessAmplitude * Math.sin(module4Omega * ti + module4SineFirstOrderGuessPhase));
+          }
+        }
+        let trueOutput;
+        if (sensorType === 'secondOrder'){
+          trueOutput = module4SecondOrderOutput[i];
+        }
+        else if (sensorType === 'firstOrderSine'){
+          trueOutput = module4SineAmplitude * Math.sin(module4Omega * ti + module4SinePhase);
+          module4SineInput.push(Math.sin(module4Omega * ti));
+        }
+        else{
+          trueOutput = module4TrueK * (1 - Math.exp(-ti / module4TrueTau));
+        }
+        module4Output.push(trueOutput);
+        module4MeasuredOutput.push(trueOutput + module4Noise[i]);
+      }
+      const module4Trace = {
+        x: module4Time,
+        y: module4MeasuredOutput,
+        mode: 'lines',
+        name: 'Unknown Sensor',
+        line: { color: '#61afef', width: 3 }
+      };
+      const module4Traces = [module4Trace]; // firstlly insert the measured trace, actual and noice to drae it
+      if(sensorType === 'firstOrderSine'){
+        module4Traces.push({
+          x: module4Time,
+          y: module4SineInput,
+          mode: 'lines',
+          name: 'Input x(t)',
+          line: { color: '#b0b0b0', width: 2, dash: 'dot' }
+        });
+      }
+      if (guess1 !== null && guess2 !== null){ // insert the guessed and the true traces if a guess has been made
+        module4Traces.push({
+          x: module4Time,
+          y: module4GuessOutput,
+          mode: 'lines',
+          name: 'Your Guess',
+          line: { color: '#e5c07b', width: 3, dash: 'dash' }
+        },
+        {
+          x: module4Time,
+          y: module4Output,
+          mode: 'lines',
+          name: 'True Response',
+          line: { color: '#98c379', width: 2}
+        });
+      }
+      const module4PlotTitle = sensorType === 'firstOrderSine' ? `Steady-State Sine Response — ω = ${module4Omega.toFixed(2)} rad/s` : 'Unknown Sensor Response';
+      const module4Layout = {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font: { color: '#e0e0e0' },
+        title: { text: module4PlotTitle, font: { size: 14 } },
+        xaxis: { title: 'Time t (s)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        yaxis: { title: 'Output y(t)', gridcolor: '#333333', zerolinecolor: '#555555' },
+        margin: { t: 30, b: 40, l: 50, r: 20 }
+      };
+      Plotly.react(module4PlotElement, module4Traces, module4Layout, {responsive: true});
+    }
+
+    // Draw the new sensor wave when click on the "New Sensor" button
+    function newModule4Sensor(){
+      const sensorType = module4SensorSelect.value;
+      // console.log('Selected sensor type:', sensorType);
+      if (sensorType === 'firstOrder' || sensorType === 'firstOrderSine'){
+        module4TrueTau = 1 + (4 * Math.random()); // Random τ between 1 and 5 seconds (Math.random() returns a value between 0 and 1)
+        module4TrueK = 0.5 + (1.5 * Math.random()); // Random K between 0.5 and 2
+        module4SecondOrderInputs.style.display = 'none';
+        module4FirstOrderInputs.style.display = 'flex';
+      }
+      else if (sensorType === 'secondOrder'){
+        module4TrueZeta = 0.2 + (0.5 * Math.random()); // Random ζ between 0.2 and 0.7
+        module4TrueWn = 1 + (3 * Math.random()); // Random ωn between 1 and 4 rad/s
+        module4TrueK = 1; // For simplicity, we can keep K = 1 for second-order sensors
+        module4SecondOrderInputs.style.display = 'flex';
+        module4FirstOrderInputs.style.display = 'none';
+      }
+      module4RoundScored = false;
+      module4InputTau.value = '';
+      module4InputK.value = '';
+      module4InputZeta.value = '';
+      module4InputWn.value = '';
+      module4CheckResult.textContent = '';
+      module4HintText.textContent = '';
+      module4Noise = [];
+      for(let i = 0; i <= 300; i++) {
+        const noise = module4TrueK * (Math.random() - 0.5) * 0.02; // Random noise between -1% and +1% of K
+        module4Noise.push(noise); // Random noise between -0.01 and 0.01 of K
+      }
+      drawModule4();
+    }
+
+    const module4NewSensorButton = document.getElementById('module4NewSensor');
+    module4NewSensorButton.addEventListener('click', newModule4Sensor);
+    newModule4Sensor(); // Draw the initial sensor
+    module4SensorSelect.addEventListener('change', newModule4Sensor); // Redraw when sensor type changes
+
+    function checkModule4Guess() {  // Function to check the user's guess value
+    if (module4RoundScored === true) { // prevent scoring multiple times for the same round
+        return;
+      }
+    const sensorType = module4SensorSelect.value;
+    if(sensorType === 'firstOrder' || sensorType === 'firstOrderSine'){  
+      const guessedTau = Number(module4InputTau.value);
+      const guessedK = Number(module4InputK.value);
+        if(Number.isFinite(guessedTau) && guessedTau > 0 && Number.isFinite(guessedK) && guessedK > 0) {
+          const relativeErrorTau = Math.abs(guessedTau - module4TrueTau) / module4TrueTau;
+          const relativeErrorK = Math.abs(guessedK - module4TrueK) / module4TrueK;
+          module4RoundsPlayed++;
+          if (relativeErrorTau <= 0.1 + 1e-12 && relativeErrorK <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
+            module4CheckResult.textContent = 'Within 10% -> full marks!';
+            module4CheckResult.style.color = '#98c379';
+            module4TotalScore++;
+          }
+          else if (relativeErrorTau > 0.1 + 1e-12 && relativeErrorK > 0.1 + 1e-12) {
+            module4CheckResult.textContent = 'Outside the 10% of τ & K.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else if (relativeErrorTau > 0.1 + 1e-12){
+            module4CheckResult.textContent = 'Outside the 10% of τ.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else {
+            module4CheckResult.textContent = 'Outside the 10% of K.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          
+          module4RoundScored = true;
+          module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
+          module4CheckResult.textContent += ' | True τ = ' + module4TrueTau.toFixed(2) + ' s, your guess = ' + guessedTau.toFixed(2) + ' s, relative error = ' + (relativeErrorTau * 100).toFixed(1) + '%.';
+          module4CheckResult.textContent += ' | True K = ' + module4TrueK.toFixed(2) + ', your guess = ' + guessedK.toFixed(2) + ', relative error = ' + (relativeErrorK * 100).toFixed(1) + '%.';
+
+          drawModule4(guessedTau, guessedK);
+        }
+        else
+        {
+          module4CheckResult.textContent = 'Please enter a valid positive number for τ & K.';
+          module4CheckResult.style.color = '#e06c75';
+          return;
+        }
+      }
+      else{
+        const guessedZeta = Number(module4InputZeta.value);
+        const guessedWn = Number(module4InputWn.value);
+        if(Number.isFinite(guessedZeta) && guessedZeta > 0 && Number.isFinite(guessedWn) && guessedWn > 0) {
+          const relativeErrorZeta = Math.abs(guessedZeta - module4TrueZeta) / module4TrueZeta;
+          const relativeErrorWn = Math.abs(guessedWn - module4TrueWn) / module4TrueWn;
+          module4RoundsPlayed++;
+          if (relativeErrorZeta <= 0.1 + 1e-12 && relativeErrorWn <= 0.1 + 1e-12) { // Added a small epsilon to account for floating-point precision
+            module4CheckResult.textContent = 'Within 10% -> full marks!';
+            module4CheckResult.style.color = '#98c379';
+            module4TotalScore++;
+          }
+          else if (relativeErrorZeta > 0.1 + 1e-12 && relativeErrorWn > 0.1 + 1e-12) {
+            module4CheckResult.textContent = 'Outside the 10% of ζ & ωn.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else if (relativeErrorZeta > 0.1 + 1e-12){
+            module4CheckResult.textContent = 'Outside the 10% of ζ.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          else {
+            module4CheckResult.textContent = 'Outside the 10% of ωn.';
+            module4CheckResult.style.color = '#e06c75';
+          }
+          
+          module4RoundScored = true;
+          module4ScoreElement.textContent = 'Score: ' + module4TotalScore + ' / ' + module4RoundsPlayed;
+          module4CheckResult.textContent += ' | True ζ = ' + module4TrueZeta.toFixed(2) + ', your guess = ' + guessedZeta.toFixed(2) + ', relative error = ' + (relativeErrorZeta * 100).toFixed(1) + '%.';
+          module4CheckResult.textContent += ' | True ωn = ' + module4TrueWn.toFixed(2) + ' rad/s, your guess = ' + guessedWn.toFixed(2) + ' rad/s, relative error = ' + (relativeErrorWn * 100).toFixed(1) + '%.';
+
+          drawModule4(guessedZeta, guessedWn);
+        }
+        else
+        {
+          module4CheckResult.textContent = 'Please enter a valid positive number for ζ & ωn.';
+          module4CheckResult.style.color = '#e06c75';
+          return;
+        }
+      }
+      module4HintText.textContent = ''; // Clear the hint text after checking
+    }
+    module4CheckButton.addEventListener('click', checkModule4Guess);
+
+    function showModule4Hint() {
+      const sensorType = module4SensorSelect.value;
+
+      if (sensorType === 'firstOrder') {
+        module4HintText.textContent =
+          'Hint: Estimate K from the final output value (unit step input). ' +
+          'Estimate τ from the time when the output reaches 63.2% of that final value.';
+      } else if (sensorType === 'firstOrderSine') {
+        module4HintText.textContent =
+          'Hint: Measure Δt between an input peak and the following output peak. ' +
+          'Calculate the positive phase lag φ = ω × Δt in radians, then τ = tan(φ) / ω. ' +
+          'Estimate the output amplitude Aout as (maximum − minimum) / 2. ' +
+          'Since the input amplitude is 1, K = Aout × √(1 + (ωτ)²). ' +
+          'Use several cycles to reduce the effect of noise.';
+      } else if (sensorType === 'secondOrder') {
+        module4HintText.textContent =
+          'Hint: Estimate the final value and the first peak. ' +
+          'Calculate Mp = (peak − final) / final as a fraction, not a percentage. ' +
+          'Then ζ = −ln(Mp) / √(π² + ln²(Mp)). ' +
+          'Measure tp, the time of the first peak, then ωn = π / (tp × √(1 − ζ²)).';
+      }
+    }
+    module4HintButton.addEventListener('click', showModule4Hint);
+  </script>
+<!-- //////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+<!-- Homework 2 -> P1 script -->
+<script>
+function simulateFirstOrderClosedLoop(options = {}) {
+  const {
+    gain = 1,
+    tau = 1,
+    kp = 9,
+    ki = 0,
+    kd = 0,
+    setpoint = 1,
+    duration = 5,
+    timeStep = 0.005,
+    initialOutput = 0,
+    controlMin = -Infinity,
+    controlMax = Infinity
+  } = options;
+
+  if (![gain, tau, kp, ki, kd, setpoint, duration, timeStep, initialOutput].every(Number.isFinite) ||
+      gain <= 0 || tau <= 0 || kp < 0 || ki < 0 || kd < 0 || duration <= 0 || timeStep <= 0) {
+    throw new Error('Invalid first-order plant or controller parameters.');
+  }
+  if (typeof controlMin !== 'number' || Number.isNaN(controlMin) ||
+      typeof controlMax !== 'number' || Number.isNaN(controlMax) ||
+      controlMin > controlMax) {
+    throw new Error('Invalid control limits.');
+  }
+
+  const steps = Math.ceil(duration / timeStep);
+  if (steps > 20000) {
+    throw new Error('The simulation has too many time steps.');
+  }
+
+  const dt = duration / steps;
+  const time = [];
+  const output = [];
+  const reference = [];
+  const control = [];
+  const error = [];
+  let y = initialOutput;
+  let integral = 0;
+
+  const getControl = (state, accumulatedError) => {
+    const e = setpoint - state;
+    const raw = (tau * (kp * e + ki * accumulatedError) + kd * state) / (tau + gain * kd);
+    return Math.max(controlMin, Math.min(controlMax, raw));
+  };
+  const derivative = (state, accumulatedError) => ({
+    dy: (gain * getControl(state, accumulatedError) - state) / tau,
+    di: setpoint - state
+  });
+
+  for (let i = 0; i <= steps; i++) {
+    time.push(i * dt);
+    output.push(y);
+    reference.push(setpoint);
+    error.push(setpoint - y);
+    control.push(getControl(y, integral));
+
+    if (i === steps) break;
+
+    const k1 = derivative(y, integral);
+    const k2 = derivative(y + dt * k1.dy / 2, integral + dt * k1.di / 2);
+    const k3 = derivative(y + dt * k2.dy / 2, integral + dt * k2.di / 2);
+    const k4 = derivative(y + dt * k3.dy, integral + dt * k3.di);
+    y += dt * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy) / 6;
+    integral += dt * (k1.di + 2 * k2.di + 2 * k3.di + k4.di) / 6;
+    if (!Number.isFinite(y) || !Number.isFinite(integral)) {
+      throw new Error('The simulation became unstable.');
+    }
+  }
+
+  return { time, output, reference, control, error };
+}
+function simulateSecondOrderClosedLoop(options = {}) {
+  const {
+    mass = 1,
+    damping = 2,
+    stiffness = 4,
+    kp = 1,
+    ki = 0,
+    kd = 0,
+    setpoint = 1,
+    duration = 5,
+    timeStep = 0.005,
+    initialOutput = 0,
+    initialVelocity = 0,
+    controlMin = -Infinity,
+    controlMax = Infinity
+  } = options;
+
+  if (![mass, damping, stiffness, kp, ki, kd, setpoint, duration, timeStep,
+         initialOutput, initialVelocity].every(Number.isFinite) ||
+      mass <= 0 || damping <= 0 || stiffness <= 0 ||
+      kp < 0 || ki < 0 || kd < 0 || duration <= 0 || timeStep <= 0) {
+    throw new Error('Invalid second-order plant or controller parameters.');
+  }
+  if (typeof controlMin !== 'number' || Number.isNaN(controlMin) ||
+      typeof controlMax !== 'number' || Number.isNaN(controlMax) ||
+      controlMin > controlMax) {
+    throw new Error('Invalid control limits.');
+  }
+
+  const steps = Math.ceil(duration / timeStep);
+  if (steps > 20000) {
+    throw new Error('The simulation has too many time steps.');
+  }
+
+  const dt = duration / steps;
+  const time = [];
+  const output = [];
+  const reference = [];
+  const control = [];
+  const error = [];
+  let y = initialOutput;
+  let velocity = initialVelocity;
+  let integral = 0;
+
+  const getControl = (position, speed, accumulatedError) =>
+    Math.max(controlMin, Math.min(controlMax,
+      kp * (setpoint - position) + ki * accumulatedError - kd * speed));
+
+  const derivative = (position, speed, accumulatedError) => ({
+    dy: speed,
+    dv: (stiffness * getControl(position, speed, accumulatedError) -
+         damping * speed - stiffness * position) / mass,
+    di: setpoint - position
+  });
+
+  for (let i = 0; i <= steps; i++) {
+    time.push(i * dt);
+    output.push(y);
+    reference.push(setpoint);
+    error.push(setpoint - y);
+    control.push(getControl(y, velocity, integral));
+
+    if (i === steps) break;
+
+    const k1 = derivative(y, velocity, integral);
+    const k2 = derivative(y + dt * k1.dy / 2,
+      velocity + dt * k1.dv / 2, integral + dt * k1.di / 2);
+    const k3 = derivative(y + dt * k2.dy / 2,
+      velocity + dt * k2.dv / 2, integral + dt * k2.di / 2);
+    const k4 = derivative(y + dt * k3.dy,
+      velocity + dt * k3.dv, integral + dt * k3.di);
+
+    y += dt * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy) / 6;
+    velocity += dt * (k1.dv + 2 * k2.dv + 2 * k3.dv + k4.dv) / 6;
+    integral += dt * (k1.di + 2 * k2.di + 2 * k3.di + k4.di) / 6;
+    if (![y, velocity, integral].every(Number.isFinite)) {
+      throw new Error('The simulation became unstable.');
+    }
+  }
+
+  return { time, output, reference, control, error };
+}
+function p1SteadyStateValue(kp, ki, setpoint, controlLimit, plantGain) {
+  const equilibrium = ki > 0
+    ? setpoint
+    : (plantGain * kp * setpoint) / (1 + plantGain * kp);
+  const bound = plantGain * controlLimit;
+  return Math.max(-bound, Math.min(bound, equilibrium));
+}
+
+function calculateP1PerformanceMetrics(simulation, target, setpoint) {
+  const { time, output } = simulation;
+  if (!time || !output || time.length < 2 || time.length !== output.length) {
+    throw new Error('Invalid simulation data for performance metrics.');
+  }
+
+  const start = output[0];
+  const step = target - start;
+  const magnitude = Math.abs(step);
+  const direction = Math.sign(step);
+  const lastIndex = output.length - 1;
+
+  const crossingTime = (fraction) => {
+    const threshold = fraction * magnitude;
+    for (let i = 1; i <= lastIndex; i++) {
+      const before = direction * (output[i - 1] - start);
+      const after = direction * (output[i] - start);
+      if (before < threshold && after >= threshold) {
+        const ratio = (threshold - before) / (after - before);
+        return time[i - 1] + ratio * (time[i] - time[i - 1]);
+      }
+    }
+    return null;
+  };
+
+  const startTime = magnitude > 1e-12 ? crossingTime(0.1) : null;
+  const finishTime = magnitude > 1e-12 ? crossingTime(0.9) : null;
+  const riseTime = startTime !== null && finishTime !== null
+    ? finishTime - startTime : null;
+
+  const peak = direction === 0 ? 0
+    : Math.max(0, ...output.map(value => direction * (value - target)));
+  const overshoot = magnitude > 1e-12 ? (peak / magnitude) * 100 : 0;
+
+  const band = Math.max(magnitude * 0.05, 1e-9);
+  let lastOutside = -1;
+  for (let i = 0; i <= lastIndex; i++) {
+    if (Math.abs(output[i] - target) > band) lastOutside = i;
+  }
+  let settlingTime = null;
+  if (lastOutside === -1) {
+    settlingTime = 0;
+  } else if (lastOutside < lastIndex) {
+    const previous = output[lastOutside];
+    const next = output[lastOutside + 1];
+    const edge = previous > target ? target + band : target - band;
+    settlingTime = time[lastOutside] +
+      ((edge - previous) / (next - previous)) * (time[lastOutside + 1] - time[lastOutside]);
+  }
+
+  const steadyStateError = Math.abs(setpoint - target);
+  const steadyStateErrorPercent = Math.abs(setpoint) > 1e-12
+    ? (steadyStateError / Math.abs(setpoint)) * 100 : 0;
+  return { riseTime, overshoot, settlingTime, steadyStateError, steadyStateErrorPercent };
+}
+
+
+function p1SimulationSettings(firstOrder, params, gains) {
+  let duration;
+  let fastestRate;
+  if (firstOrder) {
+    duration = Math.max(5, Math.min(150, 5 * params.tau));
+    fastestRate = (1 + params.gain * gains.kp) / (params.tau + params.gain * gains.kd) +
+      Math.sqrt(params.gain * gains.ki / (params.tau + params.gain * gains.kd));
+  } else {
+    const damping = params.damping + params.stiffness * gains.kd;
+    const restoring = params.stiffness * (1 + gains.kp);
+    const slowScale = Math.max(params.mass / damping, damping / restoring,
+      gains.ki > 0 ? (1 + gains.kp) / gains.ki : 0);
+    duration = Math.max(5, Math.min(120, 6 * slowScale));
+    fastestRate = damping / params.mass + Math.sqrt(restoring / params.mass) +
+      Math.cbrt(params.stiffness * gains.ki / params.mass);
+  }
+  const timeStep = Math.min(0.005, 0.8 / Math.max(1, fastestRate));
+  return { duration: Math.min(duration, 19000 * timeStep), timeStep };
+}
+
+function p1IsTheoreticallyStable(firstOrder, params, gains) {
+  if (firstOrder || gains.ki === 0) return true;
+  return (params.damping + params.stiffness * gains.kd) * (1 + gains.kp) >
+    params.mass * gains.ki;
+}
+
+function p1PlotSeries(simulation) {
+  const stride = Math.max(1, Math.ceil(simulation.time.length / 1500));
+  const indices = [];
+  for (let i = 0; i < simulation.time.length; i += stride) indices.push(i);
+  if (indices[indices.length - 1] !== simulation.time.length - 1) {
+    indices.push(simulation.time.length - 1);
+  }
+  return {
+    time: indices.map(i => simulation.time[i]),
+    output: indices.map(i => simulation.output[i]),
+    reference: indices.map(i => simulation.reference[i]),
+    control: indices.map(i => simulation.control[i])
+  };
+}
+let p1LatestSimulation = null;
+let p1LatestPlotSeries = null;
+const p1GainSliders = ['p1-kp', 'p1-ki', 'p1-kd'];
+const p1SetpointSlider = document.getElementById('p1-setpoint');
+const p1ControlLimitSlider = document.getElementById('p1-control-limit');
+const p1PlantSelector = document.getElementById('p1-plant');
+const p1PlantSliders = ['p1-gain', 'p1-tau', 'p1-mass', 'p1-damping', 'p1-stiffness'];
+
+function renderP1ResponsePlot() {
+  if (!p1LatestSimulation || typeof Plotly === 'undefined') return;
+
+  Plotly.react('p1-response-plot', [
+    {
+      x: p1LatestPlotSeries.time,
+      y: p1LatestPlotSeries.output,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Output y(t)',
+      line: { color: '#61afef', width: 3 },
+      hovertemplate: 't = %{x:.2f} s<br>Output = %{y:.3f}<extra></extra>'
+    },
+    {
+      x: p1LatestPlotSeries.time,
+      y: p1LatestPlotSeries.reference,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Setpoint',
+      line: { color: '#98c379', width: 2, dash: 'dash' },
+      hovertemplate: 't = %{x:.2f} s<br>Setpoint = %{y:.3f}<extra></extra>'
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0', size: 12 },
+    xaxis: { title: 'Time (s)', gridcolor: '#333', zerolinecolor: '#555' },
+    yaxis: { title: 'Response', gridcolor: '#333', zerolinecolor: '#555', automargin: true },
+    margin: { t: 18, r: 16, b: 92, l: 64 },
+    legend: { orientation: 'h', x: 0, y: -0.3 },
+    hovermode: 'x unified',
+    autosize: true
+  }, { responsive: true, displaylogo: false, displayModeBar: false });
+}
+
+function renderP1ControlPlot() {
+  if (!p1LatestSimulation || typeof Plotly === 'undefined') return;
+
+  const limit = Number(p1ControlLimitSlider.value);
+  const times = p1LatestPlotSeries.time;
+  Plotly.react('p1-control-plot', [
+    {
+      x: times,
+      y: p1LatestPlotSeries.control,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Control u(t)',
+      line: { color: '#61afef', width: 3 },
+      hovertemplate: 't = %{x:.2f} s<br>u = %{y:.3f}<extra></extra>'
+    },
+    {
+      x: [0, times[times.length - 1]],
+      y: [limit, limit],
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Upper limit',
+      line: { color: '#e5c07b', width: 2, dash: 'dash' },
+      hoverinfo: 'skip'
+    },
+    {
+      x: [0, times[times.length - 1]],
+      y: [-limit, -limit],
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Lower limit',
+      line: { color: '#e06c75', width: 2, dash: 'dash' },
+      hoverinfo: 'skip'
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0', size: 12 },
+    xaxis: { title: 'Time (s)', gridcolor: '#333', zerolinecolor: '#555' },
+    yaxis: { title: 'Control Signal u(t)', gridcolor: '#333', zerolinecolor: '#555', automargin: true },
+    margin: { t: 18, r: 16, b: 92, l: 64 },
+    legend: { orientation: 'h', x: 0, y: -0.3 },
+    hovermode: 'x unified',
+    autosize: true
+  }, { responsive: true, displaylogo: false, displayModeBar: false });
+}
+
+function updateP1BlockDiagram(gains, setpoint, controlLimit, firstOrder, params) {
+  document.getElementById('p1-diagram-setpoint').textContent = 'r = ' + setpoint.toFixed(1);
+  document.getElementById('p1-diagram-proportional-integral').textContent =
+    'Kp = ' + gains.kp.toFixed(1) + '  ·  Ki = ' + gains.ki.toFixed(1);
+  document.getElementById('p1-diagram-derivative').textContent = 'Kd = ' + gains.kd.toFixed(1);
+  document.getElementById('p1-diagram-limits').textContent = '±' + controlLimit.toFixed(1);
+  document.getElementById('p1-diagram-plant').textContent =
+    firstOrder ? 'First-Order Plant' : 'Second-Order Plant';
+  document.getElementById('p1-diagram-transfer').textContent = firstOrder
+    ? 'G(s) = ' + params.gain.toFixed(1) + ' / (' + params.tau.toFixed(1) + 's + 1)'
+    : 'm ' + params.mass.toFixed(1) + ' · b ' + params.damping.toFixed(1) +
+      ' · k ' + params.stiffness.toFixed(1);
+  document.getElementById('p1-diagram-svg').setAttribute('aria-label',
+    'PID feedback control loop. Setpoint ' + setpoint.toFixed(1) +
+    '. Kp ' + gains.kp.toFixed(1) +
+    ', Ki ' + gains.ki.toFixed(1) +
+    ', Kd ' + gains.kd.toFixed(1) +
+    ', saturation plus or minus ' + controlLimit.toFixed(1) +
+    '. ' + (firstOrder ? 'First-order plant.' : 'Second-order plant.'));
+}
+
+function updateP1Gains() {
+  const gains = {};
+  p1GainSliders.forEach(id => {
+    const input = document.getElementById(id);
+    const value = Number(input.value);
+    document.querySelector('label[for="' + id + '"] .p1-value').textContent = value.toFixed(1);
+    gains[id.slice(3)] = value;
+  });
+  const setpoint = Number(p1SetpointSlider.value);
+  const controlLimit = Number(p1ControlLimitSlider.value);
+  document.querySelector('label[for="p1-setpoint"] .p1-value').textContent = setpoint.toFixed(1);
+  document.getElementById('p1-limit-value').textContent = controlLimit.toFixed(1);
+  document.querySelector('.p1-limit-setting p').textContent =
+    'The controller output is limited to −' + controlLimit.toFixed(1) + ' to +' + controlLimit.toFixed(1) + '.';
+  const firstOrder = p1PlantSelector.value === 'first-order';
+  const params = {
+    gain: Number(document.getElementById('p1-gain').value),
+    tau: Number(document.getElementById('p1-tau').value),
+    mass: Number(document.getElementById('p1-mass').value),
+    damping: Number(document.getElementById('p1-damping').value),
+    stiffness: Number(document.getElementById('p1-stiffness').value)
+  };
+  p1PlantSliders.forEach(id => {
+    document.querySelector('label[for="' + id + '"] .p1-value').textContent =
+      Number(document.getElementById(id).value).toFixed(1);
+  });
+  document.getElementById('p1-first-order-params').hidden = !firstOrder;
+  document.getElementById('p1-second-order-params').hidden = firstOrder;
+  const timing = p1SimulationSettings(firstOrder, params, gains);
+  const controller = {
+    kp: gains.kp,
+    ki: gains.ki,
+    kd: gains.kd,
+    setpoint,
+    controlMin: -controlLimit,
+    controlMax: controlLimit,
+    duration: timing.duration,
+    timeStep: timing.timeStep
+  };
+  p1LatestSimulation = firstOrder
+    ? simulateFirstOrderClosedLoop({ gain: params.gain, tau: params.tau, ...controller })
+    : simulateSecondOrderClosedLoop({
+      mass: params.mass, damping: params.damping, stiffness: params.stiffness, ...controller
+    });
+  p1LatestPlotSeries = p1PlotSeries(p1LatestSimulation);
+  document.getElementById('p1-model-description').textContent = firstOrder
+    ? 'K = ' + params.gain.toFixed(1) + ', τ = ' + params.tau.toFixed(1) + ' s'
+    : 'm = ' + params.mass.toFixed(1) + ' kg, b = ' + params.damping.toFixed(1) +
+      ' N·s/m, k = ' + params.stiffness.toFixed(1) + ' N/m (F = k·u)';
+  updateP1BlockDiagram(gains, setpoint, controlLimit, firstOrder, params);
+  document.getElementById('p1-live-output-label').textContent =
+    (firstOrder ? 'First-order' : 'Second-order') + ' simulated output at ' +
+    timing.duration.toFixed(2) + ' s (setpoint = ' + setpoint.toFixed(1) + ')';
+  document.getElementById('p1-live-output').textContent =
+    p1LatestSimulation.output[p1LatestSimulation.output.length - 1].toFixed(3);
+
+  const target = p1SteadyStateValue(gains.kp, gains.ki, setpoint, controlLimit,
+    firstOrder ? params.gain : 1);
+  const metrics = calculateP1PerformanceMetrics(p1LatestSimulation, target, setpoint);
+  const stable = p1IsTheoreticallyStable(firstOrder, params, gains);
+  document.getElementById('p1-rise-time').textContent = metrics.riseTime === null
+    ? 'Not reached' : metrics.riseTime.toFixed(2) + ' s';
+  document.getElementById('p1-overshoot').textContent = metrics.overshoot.toFixed(1) + '%';
+  document.getElementById('p1-settling-time').textContent = metrics.settlingTime === null
+    ? 'Not settled' : metrics.settlingTime.toFixed(2) + ' s';
+  document.getElementById('p1-steady-state-error').textContent = stable
+    ? metrics.steadyStateErrorPercent.toFixed(1) + '%' : 'N/A';
+  document.getElementById('p1-ss-status').textContent = !stable
+    ? 'Unstable loop: no steady state'
+    : (gains.ki > 0 && Math.abs(setpoint) > (firstOrder ? params.gain : 1) * controlLimit)
+      ? 'Limit prevents full tracking'
+      : metrics.settlingTime === null ? 'Predicted; not settled yet' : 'Predicted final error';
+
+  if (!document.getElementById('homework-two-intro').hidden) {
+    renderP1ResponsePlot();
+    renderP1ControlPlot();
+  }
+}
+
+p1GainSliders.forEach(id =>
+  document.getElementById(id).addEventListener('input', updateP1Gains)
+);
+p1SetpointSlider.addEventListener('input', updateP1Gains);
+p1ControlLimitSlider.addEventListener('input', updateP1Gains);
+p1PlantSelector.addEventListener('change', updateP1Gains);
+p1PlantSliders.forEach(id =>
+  document.getElementById(id).addEventListener('input', updateP1Gains)
+);
+updateP1Gains();
+
+const p1PredictionCases = {
+  gain: {
+    before: { plant: 'first-order', kp: 1, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'first-order', kp: 9, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    metric: 'error',
+    label: 'Step error at 12 s',
+    unit: '%'
+  },
+  integral: {
+    before: { plant: 'first-order', kp: 1, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'first-order', kp: 1, ki: 1, kd: 0, setpoint: 1, limit: 10 },
+    metric: 'error',
+    label: 'Step error at 12 s',
+    unit: '%'
+  },
+  derivative: {
+    before: { plant: 'second-order', kp: 3, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'second-order', kp: 3, ki: 0, kd: 2, setpoint: 1, limit: 10 },
+    metric: 'overshoot',
+    label: 'Overshoot above expected final output',
+    unit: '%'
+  },
+  setpoint: {
+    before: { plant: 'first-order', kp: 2, ki: 0, kd: 0, setpoint: 1, limit: 10 },
+    after: { plant: 'first-order', kp: 2, ki: 0, kd: 0, setpoint: 2, limit: 10 },
+    metric: 'output',
+    label: 'Output at 12 s',
+    unit: ''
+  }
+};
+
+function p1RunPredictionCase(settings) {
+  const inputs = {
+    kp: settings.kp,
+    ki: settings.ki,
+    kd: settings.kd,
+    setpoint: settings.setpoint,
+    controlMin: -settings.limit,
+    controlMax: settings.limit,
+    duration: 12
+  };
+  return settings.plant === 'first-order'
+    ? simulateFirstOrderClosedLoop({ gain: 1, tau: 1, ...inputs })
+    : simulateSecondOrderClosedLoop({ mass: 1, damping: 2, stiffness: 4, ...inputs });
+}
+
+function p1GetPredictionValue(simulation, settings, metric) {
+  if (metric === 'output') return simulation.output[simulation.output.length - 1];
+  if (metric === 'error') {
+    return Math.abs(settings.setpoint - simulation.output[simulation.output.length - 1]) /
+      Math.abs(settings.setpoint) * 100;
+  }
+  const finalValue = p1SteadyStateValue(settings.kp, settings.ki,
+    settings.setpoint, settings.limit, 1);
+  const peak = Math.max(...simulation.output);
+  return finalValue > 0 ? Math.max(0, (peak - finalValue) / finalValue * 100) : 0;
+}
+
+function p1CheckPrediction() {
+  const key = document.getElementById('p1-prediction-scenario').value;
+  const answer = document.getElementById('p1-prediction-answer').value;
+  const feedback = document.getElementById('p1-prediction-feedback');
+  if (!answer) {
+    feedback.textContent = 'Choose Increase, Decrease, or Stay the same before checking.';
+    feedback.removeAttribute('data-result');
+    return;
+  }
+
+  const scenario = p1PredictionCases[key];
+  const before = p1GetPredictionValue(p1RunPredictionCase(scenario.before),
+    scenario.before, scenario.metric);
+  const after = p1GetPredictionValue(p1RunPredictionCase(scenario.after),
+    scenario.after, scenario.metric);
+  const difference = after - before;
+  const actual = Math.abs(difference) < 0.05 ? 'same' : difference > 0 ? 'increase' : 'decrease';
+  const correct = actual === answer;
+  feedback.dataset.result = correct ? 'correct' : 'incorrect';
+  feedback.textContent = (correct ? 'Correct prediction! ' : 'Not quite. ') +
+    scenario.label + ': ' + before.toFixed(2) + scenario.unit + ' → ' +
+    after.toFixed(2) + scenario.unit + '. It ' +
+    (actual === 'same' ? 'stays about the same.' : actual === 'increase' ? 'increases.' : 'decreases.') +
+    ' The main controls now show the second case.';
+
+  const next = scenario.after;
+  document.getElementById('p1-plant').value = next.plant;
+  document.getElementById('p1-kp').value = next.kp;
+  document.getElementById('p1-ki').value = next.ki;
+  document.getElementById('p1-kd').value = next.kd;
+  document.getElementById('p1-setpoint').value = next.setpoint;
+  document.getElementById('p1-control-limit').value = next.limit;
+  document.getElementById('p1-gain').value = 1;
+  document.getElementById('p1-tau').value = 1;
+  document.getElementById('p1-mass').value = 1;
+  document.getElementById('p1-damping').value = 2;
+  document.getElementById('p1-stiffness').value = 4;
+  updateP1Gains();
+}
+
+function p1CrossingTime(time, values, threshold) {
+  for (let i = 1; i < time.length; i++) {
+    if (values[i - 1] <= threshold && values[i] >= threshold &&
+        values[i] !== values[i - 1]) {
+      return time[i - 1] + (threshold - values[i - 1]) /
+        (values[i] - values[i - 1]) * (time[i] - time[i - 1]);
+    }
+  }
+  return null;
+}
+
+function p1RunReferenceValidation() {
+  const p = simulateFirstOrderClosedLoop({
+    gain: 1, tau: 1, kp: 9, ki: 0, kd: 0, setpoint: 1,
+    duration: 2, timeStep: 0.002, controlMin: -10, controlMax: 10
+  });
+  const pFinal = p.output[p.output.length - 1];
+  const pExpectedFinal = 0.9;
+  const pExpectedTau = 0.1;
+  const pTau = p1CrossingTime(p.time, p.output, pExpectedFinal * (1 - Math.exp(-1)));
+  const pPassed = pTau !== null && Math.abs(pTau - pExpectedTau) < 0.002 &&
+    Math.abs(pFinal - pExpectedFinal) < 0.001;
+  const pError = (1 - pFinal) * 100;
+
+  const pi = simulateFirstOrderClosedLoop({
+    gain: 1, tau: 1, kp: 1, ki: 1, kd: 0, setpoint: 1,
+    duration: 12, timeStep: 0.005, controlMin: -10, controlMax: 10
+  });
+  const piFinal = pi.output[pi.output.length - 1];
+  const piFrequency = Math.sqrt(1);
+  const piDamping = (1 + 1) / (2 * piFrequency);
+  const piError = Math.abs(1 - piFinal) * 100;
+  const piPassed = Math.abs(piFinal - (1 - Math.exp(-12))) < 0.0001 &&
+    piError < 0.01 && piFrequency === 1 && piDamping === 1;
+
+  const piSamples = [{ kp: 0, ki: 1 }, { kp: 2, ki: 2 }, { kp: 4, ki: 4 }];
+  const piResults = piSamples.map(({ kp, ki }) => {
+    const sample = simulateFirstOrderClosedLoop({
+      gain: 1, tau: 1, kp, ki, kd: 0, setpoint: 1,
+      duration: 25, timeStep: 0.005, controlMin: -10, controlMax: 10
+    });
+    return { kp, ki, error: Math.abs(1 - sample.output[sample.output.length - 1]) * 100 };
+  });
+  const allPIPassed = piResults.every(x => x.error < 0.01);
+
+  const results = document.getElementById('p1-validation-results');
+  results.dataset.result = pPassed && piPassed && allPIPassed ? 'pass' : 'fail';
+  results.textContent =
+    '1. P-only (Kp = 9): ' + (pPassed ? 'PASS' : 'CHECK') +
+    ' | τcl = ' + (pTau === null ? 'N/A' : pTau.toFixed(3)) +
+    ' s (expected 0.100 s), final output = ' + pFinal.toFixed(4) +
+    ' (expected 0.9000), step error = ' + pError.toFixed(2) + '% (expected 10%).' +
+    '\n2. PI (Kp = 1, Ki = 1): ' + (piPassed ? 'PASS' : 'CHECK') +
+    ' | ωn = ' + piFrequency.toFixed(1) + ' rad/s, ζ = ' + piDamping.toFixed(1) +
+    ', output at 12 s = ' + piFinal.toFixed(6) +
+    ', error at 12 s = ' + piError.toFixed(4) + '%.' +
+    '\n3. PI zero step steady-state error: ' + (allPIPassed ? 'PASS' : 'CHECK') +
+    ' | Test gains ' + piResults.map(x => '(Kp=' + x.kp + ', Ki=' + x.ki +
+      ': ' + x.error.toFixed(4) + '%)').join(', ') +
+    '. For a stable PI loop, the theoretical final step error is zero when the setpoint is reachable within the control limits.';
+}
+
+document.getElementById('p1-check-prediction').addEventListener('click', p1CheckPrediction);
+document.getElementById('p1-run-validation').addEventListener('click', p1RunReferenceValidation);
+document.getElementById('p1-prediction-scenario').addEventListener('change', () => {
+  const feedback = document.getElementById('p1-prediction-feedback');
+  feedback.removeAttribute('data-result');
+  feedback.textContent = 'Select your prediction before checking.';
+  document.getElementById('p1-prediction-answer').value = '';
+});
+
+</script>
+
+
+<!-- Main page (select homework) -->
+<script>
+  const homeworkEntry = document.getElementById('homework-entry');
+  const homeworkChoices = document.getElementById('homework-choices');
+  const homeworkTwoIntro = document.getElementById('homework-two-intro');
+  const homeworkSwitch = document.getElementById('homework-switch');
+
+  function showHomeworkChoices() {
+    homeworkEntry.classList.remove('showing-p1');
+    homeworkEntry.setAttribute('aria-labelledby', 'homework-entry-title');
+    homeworkEntry.scrollTop = 0;
+    homeworkEntry.hidden = false;
+    homeworkChoices.hidden = false;
+    homeworkTwoIntro.hidden = true;
+    homeworkSwitch.hidden = true;
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById('open-homework-1').addEventListener('click', () => {
+    homeworkEntry.hidden = true;
+    homeworkSwitch.hidden = false;
+    window.scrollTo(0, 0);
+    window.dispatchEvent(new Event('resize'));
+  });
+
+  document.getElementById('open-homework-2').addEventListener('click', () => {
+    homeworkChoices.hidden = true;
+    homeworkTwoIntro.hidden = false;
+    homeworkEntry.classList.add('showing-p1');
+    homeworkEntry.setAttribute('aria-labelledby', 'p1-page-title');
+    homeworkEntry.scrollTop = 0;
+    renderP1ResponsePlot();
+    renderP1ControlPlot();
+  });
+
+  document.getElementById('back-to-homeworks').addEventListener('click', showHomeworkChoices);
+  homeworkSwitch.addEventListener('click', showHomeworkChoices);
+</script>
+<!-- ///////////////////////////////////////////////////////////////// -->
+<!-- P2 layout -->
+<template id="p2-layout">
+  <hr style="border: 0; border-top: 1px solid #555; margin: 32px 0;">
+  <h1 id="p2-page-title">P2 — A Slow Sensor in the Loop</h1>
+  <section class="p1-card" aria-labelledby="p2-page-title">
+    <div class="p1-field">
+      <label class="p1-field" for="p2-sensor-tau">Sensor Time Constant (τs)</label>
+      <output id="p2-sensor-tau-value" for="p2-sensor-tau">0.00 s</output>
+      <input id="p2-sensor-tau" type="range" min="0" max="3" step="0.05" value="0">
+    </div>
+    <div class="p1-field">
+      <label for="p2-kp">Proportional Gain (Kp)</label>
+      <output id="p2-kp-value" for="p2-kp">9.0</output>
+      <input id="p2-kp" type="range" min="0" max="20" step="0.1" value="9">
+    </div>
+    <div class="p1-field">
+      <label for="p2-ki">Integral Gain (Ki)</label>
+      <output id="p2-ki-value" for="p2-ki">0.0</output>
+      <input id="p2-ki" type="range" min="0" max="20" step="0.1" value="0">
+    </div>
+    <div class="p1-field">
+      <label for="p2-kd">Derivative Gain (Kd)</label>
+      <output id="p2-kd-value" for="p2-kd">0.0</output>
+      <input id="p2-kd" type="range" min="0" max="20" step="0.1" value="0">
+    </div>
+  </section>
+  <section class="p1-card" aria-labelledby="p2-response-title">
+    <h2 id="p2-response-title">True Output vs. Sensor Reading</h2>
+    <div class="p1-response-chart" id="p2-response-plot" role="img" aria-label="True output and sensor reading over time"></div>
+  </section>
+
+  <section class="p1-card" aria-labelledby="p2-prediction-title">
+    <h2 id="p2-prediction-title">Predict, then Check</h2>
+    <div class="p1-field">
+      <label for="p2-prediction-answer">
+        With Kp = 9 and Ki = Kd = 0, what happens to the true output's
+        overshoot when τs increases from 0 to 0.5 s?
+      </label>
+
+      <select id="p2-prediction-answer">
+        <option value="">Choose a prediction</option>
+        <option value="increase">It increases</option>
+        <option value="decrease">It decreases</option>
+        <option value="same">It stays about the same</option>
+      </select>
+    </div>
+
+    <button id="p2-check-prediction" class="p1-action-button" type="button">
+      Check with simulation
+    </button>
+
+    <p id="p2-prediction-feedback" class="p1-feedback" role="status"></p>
+  </section>
+</template>
+
+<!-- P2 script -->
+<script>
+(() => {
+  const layout = document.getElementById('p2-layout');
+  const container = document.getElementById('homework-two-intro');
+  container.append(layout.content.cloneNode(true));
+
+  const sensorTauInput = document.getElementById('p2-sensor-tau');
+  const kpInput = document.getElementById('p2-kp');
+  const kiInput = document.getElementById('p2-ki');
+  const kdInput = document.getElementById('p2-kd');
+
+  function simulateP2(sensorTau, kp, ki, kd) {
+    const setpoint = 1;
+    const duration = 8;
+    const dt = 0.002;
+    const steps = Math.round(duration / dt);
+    const controlMin = -20;
+    const controlMax = 20;
+
+    // Use the P1 solver for ideal measurement.
+    if (sensorTau === 0) {
+      const ideal = simulateFirstOrderClosedLoop({
+        gain: 1,
+        tau: 1,
+        kp,
+        ki,
+        kd,
+        setpoint,
+        duration,
+        timeStep: dt,
+        controlMin,
+        controlMax,
+      });
+      return { ...ideal, measured: ideal.output };
+    }
+
+    function rates([y, measured, integral]) {
+      const error = setpoint - measured;
+      const dMeasured = (y - measured) / sensorTau;
+      const rawControl = kp * error + ki * integral - kd * dMeasured;
+      const control = Math.max(controlMin, Math.min(controlMax, rawControl));
+
+      // Plant gain K = 1 and plant time constant τ = 1 s.
+      return [control - y, dMeasured, error];
+    }
+
+    const advance = (state, rate, step) =>
+      state.map((value, index) => value + step * rate[index]);
+
+    const time = [0];
+    const output = [0];
+    const measured = [0];
+    let state = [0, 0, 0]; // [true output, measured output, integral]
+
+    for (let i = 1; i <= steps; i++) {
+      const k1 = rates(state);
+      const k2 = rates(advance(state, k1, dt / 2));
+      const k3 = rates(advance(state, k2, dt / 2));
+      const k4 = rates(advance(state, k3, dt));
+
+      state = state.map((value, j) =>
+        value + dt * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]) / 6
+      );
+
+      time.push(i * dt);
+      output.push(state[0]);
+      measured.push(state[1]);
+    }
+
+    return { time, output, measured };
+  }
+
+  function updateP2() {
+    const sensorTau = Number(sensorTauInput.value);
+    const kp = Number(kpInput.value);
+    const ki = Number(kiInput.value);
+    const kd = Number(kdInput.value);
+
+    document.getElementById('p2-sensor-tau-value').value =
+      `${sensorTau.toFixed(2)} s`;
+    document.getElementById('p2-kp-value').value = kp.toFixed(1);
+    document.getElementById('p2-ki-value').value = ki.toFixed(1);
+    document.getElementById('p2-kd-value').value = kd.toFixed(1);
+
+    const result = simulateP2(sensorTau, kp, ki, kd);
+
+    Plotly.react('p2-response-plot', [
+      {
+        x: result.time,
+        y: result.output,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'True output y(t)',
+        line: { color: '#61afef', width: 3 },
+      },
+      {
+        x: result.time,
+        y: result.measured,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Sensor reading yₘ(t)',
+        line: { color: '#e5c07b', width: 2, dash: 'dash' },
+      },
+    ], {
+      paper_bgcolor: '#1e1e1e',
+      plot_bgcolor: '#1e1e1e',
+      font: { color: '#e0e0e0' },
+      xaxis: { title: 'Time (s)', gridcolor: '#333' },
+      yaxis: { title: 'Output', gridcolor: '#333', automargin: true },
+      margin: { t: 18, r: 16, b: 84, l: 60 },
+      legend: { orientation: 'h', y: -0.25 },
+      hovermode: 'x unified',
+      autosize: true,
+    }, { responsive: true, displayModeBar: false });
+  }
+
+  function checkP2Prediction() {
+    const answer = document.getElementById('p2-prediction-answer').value;
+    const feedback = document.getElementById('p2-prediction-feedback');
+
+    if (!answer) {
+      feedback.textContent = 'Choose a prediction first.';
+      return;
+    }
+
+    const ideal = simulateP2(0, 9, 0, 0);
+    const slow = simulateP2(0.5, 9, 0, 0);
+    const steadyState = 0.9;
+    const overshoot = result =>
+      100 * Math.max(0, Math.max(...result.output) - steadyState) /
+      steadyState;
+
+    const idealOvershoot = overshoot(ideal);
+    const slowOvershoot = overshoot(slow);
+    const actual = slowOvershoot > idealOvershoot ? 'increase' : 'same';
+
+    feedback.textContent =
+      `${answer === actual ? 'Correct.' : 'Try again.'} ` +
+      `True-output overshoot changes from ${idealOvershoot.toFixed(1)}% ` +
+      `to ${slowOvershoot.toFixed(1)}%, measured relative to 0.90.`;
+
+    sensorTauInput.value = '0.5';
+    kpInput.value = '9';
+    kiInput.value = '0';
+    kdInput.value = '0';
+    updateP2();
+  }
+
+  for (const input of [sensorTauInput, kpInput, kiInput, kdInput]) {
+    input.addEventListener('input', updateP2);
+  }
+
+  document.getElementById('p2-check-prediction')
+    .addEventListener('click', checkP2Prediction);
+
+  document.getElementById('open-homework-2')
+    .addEventListener('click', updateP2);
+})();
+</script>
+  
+
+<!-- P4: Tuning Challenge -->
+<template id="p4-layout">
+  <hr style="border:0; border-top:1px solid #555; margin:32px 0;">
+
+  <h1 id="p4-page-title">P4 — Tuning Challenge</h1>
+
+  <section class="p1-card">
+    <h2>Hidden Random Plant</h2>
+
+    <p class="p1-secondary">
+      Tune a PID controller to meet the target specifications.
+      The plant parameters are hidden.
+    </p>
+
+    <button id="p4-new-plant"
+            class="p1-action-button"
+            type="button">
+      New Random Plant
+    </button>
+
+    <p id="p4-plant-status"
+       class="p1-feedback"
+       role="status">
+      Click New Random Plant to start.
+    </p>
+  </section>
+
+  <section class="p1-card">
+    <h2>Target Specifications</h2>
+
+    <p>Overshoot: ≤ 10%</p>
+    <p>Settling Time: ≤ 5 seconds</p>
+    <p>Steady-State Error: approximately 0%</p>
+
+    <p class="p1-secondary">
+      Adjust the PID gains to satisfy all targets.
+    </p>
+  </section>
+
+  
+<!-- P4: PID Controller Settings -->
+<section class="p1-card">
+  <h2>PID Controller Settings</h2>
+
+  <div class="p1-controls">
+    <label class="p1-field" for="p4-kp">
+      Proportional Gain (Kp)
+      <output id="p4-kp-value">1.0</output>
+      <input id="p4-kp" type="range"
+             min="0" max="20" step="0.1" value="1">
+    </label>
+
+    <label class="p1-field" for="p4-ki">
+      Integral Gain (Ki)
+      <output id="p4-ki-value">0.0</output>
+      <input id="p4-ki" type="range"
+             min="0" max="20" step="0.1" value="0">
+    </label>
+
+    <label class="p1-field" for="p4-kd">
+      Derivative Gain (Kd)
+      <output id="p4-kd-value">0.0</output>
+      <input id="p4-kd" type="range"
+             min="0" max="20" step="0.1" value="0">
+    </label>
+  </div>
+</section>
+
+<!-- P4: Response Plot -->
+<section class="p1-card">
+  <h2>Output vs. Setpoint</h2>
+  <div id="p4-response-plot"
+       class="p1-response-chart"
+       role="img"
+       aria-label="PID tuning response plot">
+  </div>
+  <p class="p1-secondary">
+    The simulation will be connected in the next stage.
+  </p>
+</section>
+
+<!-- P4: Performance Metrics -->
+<section class="p1-card">
+  <h2>Performance Metrics</h2>
+
+  <p class="p1-secondary">
+    Check whether your PID settings meet the challenge targets.
+  </p>
+
+  <div class="p1-metrics">
+
+    <div class="p1-metric">
+      <span>Overshoot</span>
+      <strong id="p4-overshoot">—</strong>
+      <small id="p4-overshoot-status">Not tested</small>
+    </div>
+
+    <div class="p1-metric">
+      <span>Settling Time</span>
+      <strong id="p4-settling-time">—</strong>
+      <small id="p4-settling-status">Not tested</small>
+    </div>
+
+    <div class="p1-metric">
+      <span>Steady-State Error</span>
+      <strong id="p4-steady-state-error">—</strong>
+      <small id="p4-error-status">Not tested</small>
+    </div>
+
+  </div>
+</section>
+<section class="p1-card">
+  <h2>Result &amp; Score</h2>
+  <button id="p4-submit" class="p1-action-button" type="button">Submit Tuning</button>
+  <p id="p4-result" class="p1-feedback" role="status">Click New Random Plant to start.</p>
+  <p id="p4-score" class="p1-value">Score: 0 / 0</p>
+</section>
+<section class="p1-card">
+  <h2>Predict, then Check</h2>
+
+  <p class="p1-secondary">
+    With Kp = 5 and Kd = 0, what happens to the steady-state error
+    when Ki increases from 0 to 1?
+  </p>
+
+  <label class="p1-field" for="p4-prediction">
+    Your Prediction:
+    <select id="p4-prediction" class="p1-prediction">
+      <option value="">Choose your prediction</option>
+      <option value="zero">It becomes zero</option>
+      <option value="smaller">It gets smaller but not zero</option>
+      <option value="same">It stays the same</option>
+    </select>
+  </label>
+
+  <button id="p4-check-prediction" class="p1-action-button" type="button">
+    Check with Simulation
+  </button>
+
+  <p id="p4-prediction-feedback" class="p1-feedback">
+    Choose a prediction before checking.
+  </p>
+</section>
+</template>
+
+<!-- P4 JavaScript -->
+<script>
+(() => {
+  const layout = document.getElementById('p4-layout');
+  const container = document.getElementById('homework-two-intro');
+
+  // Add P4 to the Homework 2 page.
+  container.appendChild(layout.content.cloneNode(true));
+
+  const status = document.getElementById('p4-plant-status');
+  const newPlantButton = document.getElementById('p4-new-plant');
+
+  // Store the current hidden plant.
+  let currentPlant = null;
+  // P4 round state
+  let p4AllPass = false, p4Submitted = false, p4Played = 0, p4Score = 0;
+
+  function setP4Metric(valueId, statusId, text, ok) {
+    document.getElementById(valueId).textContent = text;
+    const s = document.getElementById(statusId);
+    s.textContent = ok ? 'PASS' : 'FAIL';
+    s.style.color = ok ? '#98c379' : '#e06c75';
+  }
+  function generateRandomPlant() {
+    const firstOrder = Math.random() < 0.5;
+
+    if (firstOrder) {
+      // Reuse the random ranges from Homework 1 Module 4.
+      currentPlant = {
+        type: 'first-order',
+        gain: 0.5 + 1.5 * Math.random(),
+        tau: 1 + 4 * Math.random()
+      };
+    } else {
+      const zeta = 0.2 + 0.5 * Math.random();
+      const wn = 1 + 3 * Math.random();
+
+      // Convert to P1's mass-spring-damper model.
+      const mass = 1;
+
+      currentPlant = {
+        type: 'second-order',
+        mass: mass,
+        damping: 2 * zeta * wn * mass,
+        stiffness: mass * wn * wn
+      };
+    }
+
+    // Keep the plant available for P4 simulation.
+    window.p4Challenge = {
+      plant: currentPlant,
+      targets: {
+        maxOvershoot: 10,
+        maxSettlingTime: 5,
+        maxSteadyStateErrorPercent: 0.5
+      }
+    };
+
+    // Do not reveal the actual parameters.
+    status.textContent =
+      'New hidden plant generated successfully! ' +
+      'Tune your PID controller to meet the targets.';
+
+    status.dataset.result = 'pass';
+  }
+
+  newPlantButton.addEventListener('click', generateRandomPlant);
+  
+  // P4: Update PID slider values
+  ['kp', 'ki', 'kd'].forEach(gain => {
+    const slider = document.getElementById('p4-' + gain);
+    const valueLabel = document.getElementById('p4-' + gain + '-value');
+
+    slider.addEventListener('input', () => {
+      valueLabel.textContent = Number(slider.value).toFixed(1);
+    });
+  });
+
+  // P4: Prepare the response plot
+  Plotly.newPlot('p4-response-plot', [], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0' },
+    xaxis: { title: 'Time (s)' },
+    yaxis: { title: 'Output y(t)' },
+    margin: { t: 30, b: 50, l: 60, r: 20 }
+  }, {
+    responsive: true,
+    displaylogo: false
+  });
+
+  // P4: Simulate the hidden plant using P1 functions
+  function updateP4Response() {
+    if (!window.p4Challenge) return;
+
+    const plant = window.p4Challenge.plant;
+
+    const kp = Number(document.getElementById('p4-kp').value);
+    const ki = Number(document.getElementById('p4-ki').value);
+    const kd = Number(document.getElementById('p4-kd').value);
+
+    const settings = {
+      kp: kp,
+      ki: ki,
+      kd: kd,
+      setpoint: 1,
+      duration: 20,
+      timeStep: 0.005,
+      controlMin: -10,
+      controlMax: 10
+    };
+
+    try {
+      let result;
+
+      if (plant.type === 'first-order') {
+        result = simulateFirstOrderClosedLoop({
+          gain: plant.gain,
+          tau: plant.tau,
+          ...settings
+        });
+      } else {
+        result = simulateSecondOrderClosedLoop({
+          mass: plant.mass,
+          damping: plant.damping,
+          stiffness: plant.stiffness,
+          ...settings
+        });
+      }
+      // ---- P4: metrics + pass/fail (reuses P1 functions) ----
+      const firstOrder = plant.type === 'first-order';
+      const plantGain  = firstOrder ? plant.gain : 1;
+      const stable = p1IsTheoreticallyStable(firstOrder, plant, { kp, ki, kd });
+      const target = p1SteadyStateValue(kp, ki, 1, 10, plantGain);
+      const m = calculateP1PerformanceMetrics(result, target, 1);
+      const tg = window.p4Challenge.targets;
+
+      const osOk = m.overshoot <= tg.maxOvershoot;
+      const stOk = m.settlingTime !== null && m.settlingTime <= tg.maxSettlingTime;
+      const ssOk = stable && m.steadyStateErrorPercent <= tg.maxSteadyStateErrorPercent;
+      p4AllPass = osOk && stOk && ssOk;
+
+      setP4Metric('p4-overshoot', 'p4-overshoot-status',
+        m.overshoot.toFixed(1) + '%', osOk);
+      setP4Metric('p4-settling-time', 'p4-settling-status',
+        m.settlingTime === null ? 'Not settled' : m.settlingTime.toFixed(2) + ' s', stOk);
+      setP4Metric('p4-steady-state-error', 'p4-error-status',
+        stable ? m.steadyStateErrorPercent.toFixed(1) + '%' : 'Unstable', ssOk);
+
+      const traces = [
+        {
+          x: result.time,
+          y: result.output,
+          mode: 'lines',
+          name: 'Output y(t)',
+          line: { color: '#61afef', width: 3 }
+        },
+        {
+          x: result.time,
+          y: result.reference,
+          mode: 'lines',
+          name: 'Setpoint',
+          line: { color: '#98c379', dash: 'dash', width: 2 }
+        }
+      ];
+
+      Plotly.react('p4-response-plot', traces, {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font: { color: '#e0e0e0' },
+        xaxis: { title: 'Time (s)' },
+        yaxis: { title: 'Output y(t)' },
+        margin: { t: 30, b: 50, l: 60, r: 20 }
+      }, {
+        responsive: true,
+        displaylogo: false
+      });
+
+    } catch (error) {
+      console.error('P4 simulation error:', error);
+      p4AllPass = false;
+      setP4Metric('p4-overshoot', 'p4-overshoot-status', 'N/A', false);
+      setP4Metric('p4-settling-time', 'p4-settling-status', 'N/A', false);
+      setP4Metric('p4-steady-state-error', 'p4-error-status', 'N/A', false);
+      document.getElementById('p4-plant-status').textContent =
+        'Unable to simulate these PID settings.';
+    }
+  }
+
+  // Update after generating a new plant
+  newPlantButton.addEventListener('click', updateP4Response);
+
+  // Update when a PID slider changes
+  ['kp', 'ki', 'kd'].forEach(gain => {
+    document.getElementById('p4-' + gain)
+      .addEventListener('input', updateP4Response);
+  });
+  // ---- P4: submit + score ----
+  document.getElementById('p4-submit').addEventListener('click', () => {
+    const result = document.getElementById('p4-result');
+    if (!window.p4Challenge) {
+      result.textContent = 'Click New Random Plant first.';
+      return;
+    }
+    if (p4Submitted) {
+      result.textContent = 'Already submitted. Generate a new plant for another round.';
+      return;
+    }
+    p4Submitted = true;
+    p4Played++;
+    if (p4AllPass) p4Score++;
+    result.dataset.result = p4AllPass ? 'pass' : 'fail';
+    result.textContent = p4AllPass
+      ? 'PASS: all three targets met.'
+      : 'FAIL: at least one target was missed. Try a new plant.';
+    document.getElementById('p4-score').textContent =
+      'Score: ' + p4Score + ' / ' + p4Played;
+  });
+
+  // New plant = new round
+  newPlantButton.addEventListener('click', () => {
+    p4Submitted = false;
+    const result = document.getElementById('p4-result');
+    result.removeAttribute('data-result');
+    result.textContent = 'Tune the gains, then press Submit.';
+  });
+    // ---- P4: Predict, then check ----
+  function p4SteadyStateError(plant, kp, ki, kd) {
+    const firstOrder = plant.type === 'first-order';
+    const settings = {
+      kp, ki, kd, setpoint: 1, duration: 20, timeStep: 0.005,
+      controlMin: -10, controlMax: 10
+    };
+    const sim = firstOrder
+      ? simulateFirstOrderClosedLoop({ gain: plant.gain, tau: plant.tau, ...settings })
+      : simulateSecondOrderClosedLoop({
+          mass: plant.mass, damping: plant.damping,
+          stiffness: plant.stiffness, ...settings
+        });
+    const target = p1SteadyStateValue(kp, ki, 1, 10, firstOrder ? plant.gain : 1);
+    return calculateP1PerformanceMetrics(sim, target, 1).steadyStateErrorPercent;
+  }
+
+  document.getElementById('p4-check-prediction').addEventListener('click', () => {
+    const prediction = document.getElementById('p4-prediction').value;
+    const feedback = document.getElementById('p4-prediction-feedback');
+
+    if (!window.p4Challenge) {
+      feedback.textContent = 'Click New Random Plant first.';
+      feedback.removeAttribute('data-result');
+      return;
+    }
+    if (!prediction) {
+      feedback.textContent = 'Please choose a prediction first.';
+      feedback.removeAttribute('data-result');
+      return;
+    }
+
+    const plant = window.p4Challenge.plant;
+    const errP  = p4SteadyStateError(plant, 5, 0, 0);   // Kp only
+    const errPI = p4SteadyStateError(plant, 5, 1, 0);   // Kp + Ki
+
+    const actual = errPI < 0.5 ? 'zero'
+                 : errPI < errP - 0.5 ? 'smaller'
+                 : 'same';
+    const correct = prediction === actual;
+
+    feedback.dataset.result = correct ? 'correct' : 'incorrect';
+    feedback.textContent =
+      (correct ? 'Correct prediction! ' : 'Incorrect prediction. ') +
+      'Steady-state error with Ki = 0: ' + errP.toFixed(1) +
+      '%. With Ki = 1: ' + errPI.toFixed(1) + '%. ' +
+      'The integral term keeps accumulating error until it reaches zero.';
+
+    // Like P1 and P2: move the sliders to the checked setting so the user can explore
+    [['kp', 5], ['ki', 1], ['kd', 0]].forEach(([gain, value]) => {
+      const slider = document.getElementById('p4-' + gain);
+      slider.value = value;
+      slider.dispatchEvent(new Event('input'));
+    });
+  });
+})();
+</script>
+ 
+
+<!--P3: Digital PID--> 
+<template id="p3-layout">
+
+  <hr style="margin: 40px 0; border: 1px solid #333;">
+
+  <h1 id="p3-title">P3 — Digital PID</h1>
+
+  <p class="p1-secondary">
+    Explore how the sampling time affects
+    the performance of a digital PID controller.
+  </p>
+
+  <section class="p1-card">
+    <h2>Sampling Settings</h2>
+
+    <label class="p1-field" for="p3-ts">
+      Sampling Time (Ts):
+      <span class="p1-value" id="p3-ts-value">0.02</span> s
+
+      <input
+        id="p3-ts"
+        type="range"
+        min="0.01"
+        max="0.50"
+        step="0.01"
+        value="0.02">
+    </label>
+
+  </section>
+
+<!--P3: PID Gain Settings-->
+<section class="p1-card">
+
+  <h2>PID Controller Gains</h2>
+
+  <!--Proportional Gain-->
+  <label class="p1-field" for="p3-kp">
+    Proportional Gain (Kp):
+    <span class="p1-value" id="p3-kp-value">1.0</span>
+
+    <input
+      id="p3-kp"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="1">
+  </label>
+
+  <br>
+
+  <!--Integral Gain-->
+  <label class="p1-field" for="p3-ki">
+    Integral Gain (Ki):
+    <span class="p1-value" id="p3-ki-value">0.0</span>
+
+    <input
+      id="p3-ki"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="0">
+  </label>
+
+  <br>
+
+   <!--Derivative Gain-->
+  <label class="p1-field" for="p3-kd">
+    Derivative Gain (Kd):
+    <span class="p1-value" id="p3-kd-value">0.0</span>
+
+    <input
+      id="p3-kd"
+      type="range"
+      min="0"
+      max="20"
+      step="0.1"
+      value="0">
+  </label>
+
+</section>
+
+
+<section class="p1-card">
+
+  <h2>Anti-Windup Control</h2>
+
+  <label for="p3-anti-windup">
+    <input type="checkbox" id="p3-anti-windup">
+    Enable Anti-Windup
+  </label>
+
+  <p class="p1-secondary">
+    Prevents excessive integral accumulation
+    when the control signal reaches its limit.
+  </p>
+
+</section>
+
+
+<section class="p1-card">
+
+  <h2>Digital PID — Output vs. Setpoint</h2>
+
+  <p class="p1-secondary">
+    Observe how the system response changes
+    with the sampling time and PID gains.
+  </p>
+
+  <div
+    id="p3-response-plot"
+    class="p1-response-chart">
+  </div>
+
+</section>
+
+
+<section class="p1-card">
+
+  <h2>Digital PID — Stair-Step Control Signal</h2>
+
+  <p class="p1-secondary">
+    The control signal updates every Ts seconds
+    and stays constant between samples.
+  </p>
+
+  <div
+    id="p3-control-plot"
+    class="p1-response-chart">
+  </div>
+
+</section>
+
+<section class="p1-card">
+
+  <h2>Arduino Digital PID Code</h2>
+
+  <p class="p1-secondary">
+    Arduino code generated automatically using
+    the selected PID gains, sampling time,
+    and Anti-Windup setting.
+  </p>
+
+  <textarea
+    id="p3-arduino-code"
+    readonly
+    rows="22"
+    style="width:100%; box-sizing:border-box;
+    background:#161616; color:#e0e0e0;
+    border:1px solid #444; border-radius:8px;
+    padding:15px; font-family:monospace;
+    font-size:13px; line-height:1.5;">
+  </textarea>
+
+  <button
+    id="p3-copy-code"
+    class="p1-action-button"
+    type="button">
+    Copy Arduino Code
+  </button>
+
+  <p id="p3-copy-status" class="p1-secondary"></p>
+
+</section>
+
+<section class="p1-card">
+
+  <h2>Predict, then Check</h2>
+
+  <p class="p1-secondary">
+    With Kp = 9, Ki = 0 and Kd = 0,
+    what happens to oscillations when Ts
+    increases from 0.02 s to 0.30 s?
+  </p>
+
+  <label class="p1-field" for="p3-prediction">
+    Your Prediction:
+
+    <select id="p3-prediction" class="p1-prediction">
+      <option value="">Choose your prediction</option>
+      <option value="increase">Oscillations increase</option>
+      <option value="decrease">Oscillations decrease</option>
+      <option value="same">Almost no change</option>
+    </select>
+  </label>
+
+  <button
+    id="p3-check-prediction"
+    class="p1-action-button"
+    type="button">
+    Check with Simulation
+  </button>
+
+  <p id="p3-prediction-feedback" class="p1-feedback">
+    Choose a prediction before checking.
+  </p>
+
+</section>
+
+</template>
+
+<script>
+(() => {
+
+  // Add P3 to Homework 2
+  const p3Layout = document.getElementById('p3-layout');
+  const container = document.getElementById('homework-two-intro');
+
+const p4Section = document.getElementById('p4-page-title');
+
+if (p4Section) {
+  p4Section.previousElementSibling
+    ? container.insertBefore(
+        p3Layout.content.cloneNode(true),
+        p4Section.previousElementSibling
+      )
+    : container.insertBefore(
+        p3Layout.content.cloneNode(true),
+        p4Section
+      );
+} else {
+  container.appendChild(p3Layout.content.cloneNode(true));
+}
+
+  // Sampling Time controls
+  const tsSlider = document.getElementById('p3-ts');
+  const tsValue = document.getElementById('p3-ts-value');
+
+  // Update the displayed value
+  tsSlider.addEventListener('input', () => {
+    tsValue.textContent = Number(tsSlider.value).toFixed(2);
+  });
+
+
+// P3: PID Gain Controls
+const gainSliders = ['p3-kp', 'p3-ki', 'p3-kd'];
+
+gainSliders.forEach(id => {
+
+  const slider = document.getElementById(id);
+  const valueDisplay = document.getElementById(id + '-value');
+
+  slider.addEventListener('input', () => {
+    valueDisplay.textContent = Number(slider.value).toFixed(1);
+  });
+
+});
+
+  
+// P3: Digital PID calculation with Anti-Windup
+function calculateDigitalPID(
+  error, previousError, errorSum,
+  Ts, Kp, Ki, Kd,
+  antiWindup = false,
+  controlLimit = Infinity
+) {
+
+  // Proportional term
+  const P = Kp * error;
+
+  // Derivative term
+  const D = Kd * (error - previousError) / Ts;
+
+  // Calculate the proposed integral accumulation
+  let newErrorSum = errorSum + error;
+
+  // Calculate the proposed control signal
+  const candidateI = Ki * Ts * newErrorSum;
+  const candidateU = P + candidateI + D;
+
+  // Stop integration if saturation would become worse
+  if (antiWindup && Ki > 0) {
+
+    if (
+      (candidateU > controlLimit && error > 0) ||
+      (candidateU < -controlLimit && error < 0)
+    ) {
+      newErrorSum = errorSum;
+    }
+
+  }
+
+  // Final integral term
+  const I = Ki * Ts * newErrorSum;
+
+  // Total PID output
+  const u = P + I + D;
+
+  return {
+    control: u,
+    newErrorSum: newErrorSum,
+    P: P,
+    I: I,
+    D: D
+  };
+}
+
+
+// P3: Digital PID closed-loop simulation
+function simulateP3(Ts, Kp, Ki, Kd, antiWindup = false) {
+
+  // First-order plant parameters
+  const K = 1;
+  const tau = 1;
+  const setpoint = 1;
+
+  // Simulation settings
+  const duration = 8;
+  const controlLimit = 10;
+  const subSteps = 10;
+
+  // Data arrays
+  const time = [0];
+  const output = [0];
+  const reference = [setpoint];
+  const control = [0];
+
+  const sampleTimes = [];
+  const sampleControl = [];
+
+
+  // Initial conditions
+  let y = 0;
+  let previousError = 0;
+  let errorSum = 0;
+
+  // Run the digital controller every Ts seconds
+  for (let t = 0; t < duration - 1e-9; t += Ts) {
+
+    // Calculate current error
+    const error = setpoint - y;
+
+    // Calculate PID control signal
+    
+// Calculate PID with Anti-Windup setting
+   const pid = calculateDigitalPID(
+    error,
+    previousError,
+    errorSum,
+    Ts,
+    Kp,
+    Ki,
+    Kd,
+    antiWindup,
+    controlLimit
+);
+
+
+    // Update controller memory
+    previousError = error;
+    errorSum = pid.newErrorSum;
+
+    // Apply actuator limits
+    const u = Math.max(
+      -controlLimit,
+      Math.min(controlLimit, pid.control)
+    );
+
+    sampleTimes.push(t);
+    sampleControl.push(u);
+
+    // Keep control constant until next sample
+    control[control.length - 1] = u;
+
+    // Divide the sampling interval into smaller RK4 steps
+    const interval = Math.min(Ts, duration - t);
+    const dt = interval / subSteps;
+
+    // Plant dynamics: tau * dy/dt + y = K*u
+    const f = (state) => (K * u - state) / tau;
+
+    for (let j = 0; j < subSteps; j++) {
+
+      // RK4 numerical integration
+      const k1 = f(y);
+      const k2 = f(y + dt * k1 / 2);
+      const k3 = f(y + dt * k2 / 2);
+      const k4 = f(y + dt * k3);
+
+      y += dt * (k1 + 2*k2 + 2*k3 + k4) / 6;
+
+      // Save simulation results
+      time.push(t + (j + 1) * dt);
+      output.push(y);
+      reference.push(setpoint);
+      control.push(u);
+    }
+  }
+
+  
+      sampleTimes.push(duration);
+      sampleControl.push(sampleControl[sampleControl.length - 1]);
+
+return {
+  time,
+  output,
+  reference,
+  control,
+  sampleTimes,
+  sampleControl
+};
+
+}
+
+
+// P3: Update simulation and output graph
+function updateP3() {
+
+  // Read current values from the website
+  const Ts = Number(document.getElementById('p3-ts').value);
+  const Kp = Number(document.getElementById('p3-kp').value);
+  const Ki = Number(document.getElementById('p3-ki').value);
+  const Kd = Number(document.getElementById('p3-kd').value);
+
+  // Read Anti-Windup state
+  const antiWindup =
+   document.getElementById('p3-anti-windup').checked;
+  // Run simulation using slider values
+  const result = simulateP3(Ts, Kp, Ki, Kd, antiWindup);
+
+  // Draw output and setpoint
+  Plotly.react('p3-response-plot', [
+    {
+      x: result.time,
+      y: result.output,
+      mode: 'lines',
+      name: 'System Output',
+      line: { color: '#61afef', width: 3 }
+    },
+    {
+      x: result.time,
+      y: result.reference,
+      mode: 'lines',
+      name: 'Setpoint',
+      line: { color: '#98c379', width: 2, dash: 'dash' }
+    }
+  ], {
+    paper_bgcolor: '#1e1e1e',
+    plot_bgcolor: '#1e1e1e',
+    font: { color: '#e0e0e0' },
+    xaxis: { title: 'Time (s)', gridcolor: '#333' },
+    yaxis: { title: 'Output', gridcolor: '#333' },
+    margin: { t: 20, r: 20, b: 80, l: 60 },
+    legend: { orientation: 'h', y: -0.3 },
+    autosize: true
+  }, {
+    responsive: true,
+    displayModeBar: false
+  });
+  
+Plotly.react('p3-control-plot', [
+  {
+    x: result.sampleTimes,
+    y: result.sampleControl,
+    mode: 'lines',
+    name: 'Digital Control u[k]',
+    line: {
+      color: '#61afef',
+      width: 3,
+      shape: 'hv'
+    }
+  },
+  {
+    x: [0, 8],
+    y: [10, 10],
+    mode: 'lines',
+    name: 'Upper Limit (+10)',
+    line: {
+      color: '#e5c07b',
+      width: 2,
+      dash: 'dash'
+    }
+  },
+  {
+    x: [0, 8],
+    y: [-10, -10],
+    mode: 'lines',
+    name: 'Lower Limit (-10)',
+    line: {
+      color: '#e06c75',
+      width: 2,
+      dash: 'dash'
+    }
+  }
+], {
+  paper_bgcolor: '#1e1e1e',
+  plot_bgcolor: '#1e1e1e',
+  font: { color: '#e0e0e0' },
+  xaxis: { title: 'Time (s)', gridcolor: '#333' },
+  yaxis: { title: 'Control Signal u[k]', gridcolor: '#333' },
+  margin: { t: 20, r: 20, b: 80, l: 65 },
+  legend: { orientation: 'h', y: -0.3 },
+  autosize: true
+}, {
+  responsive: true,
+  displayModeBar: false
+});
+
+updateP3ArduinoCode();
+}
+
+function updateP3ArduinoCode() {
+
+  const Ts = Number(document.getElementById('p3-ts').value);
+  const Kp = Number(document.getElementById('p3-kp').value);
+  const Ki = Number(document.getElementById('p3-ki').value);
+  const Kd = Number(document.getElementById('p3-kd').value);
+
+  const antiWindup =
+    document.getElementById('p3-anti-windup').checked;
+
+  const sampleMs = Math.round(Ts * 1000);
+
+  const code = `#include <math.h>
+
+const int SENSOR_PIN = A0;
+const int PWM_FORWARD = 9;
+const int PWM_REVERSE = 10;
+
+const float Kp = ${Kp.toFixed(2)}f;
+const float Ki = ${Ki.toFixed(2)}f;
+const float Kd = ${Kd.toFixed(2)}f;
+
+const unsigned long SAMPLE_MS = ${sampleMs}UL;
+const float Ts = SAMPLE_MS / 1000.0f;
+
+const float SETPOINT = 1.0f;
+const float CONTROL_LIMIT = 10.0f;
+const bool ANTI_WINDUP = ${antiWindup};
+
+float previousError = 0.0f;
+float errorSum = 0.0f;
+unsigned long lastSample = 0;
+
+float readPlant() {
+  return analogRead(SENSOR_PIN) / 1023.0f;
+}
+
+void applyControl(float u) {
+  int pwm = constrain(
+    (int)(fabsf(u) * 255.0f / CONTROL_LIMIT + 0.5f),
+    0, 255
+  );
+
+  if (u >= 0) {
+    analogWrite(PWM_REVERSE, 0);
+    analogWrite(PWM_FORWARD, pwm);
+  } else {
+    analogWrite(PWM_FORWARD, 0);
+    analogWrite(PWM_REVERSE, pwm);
+  }
+}
+
+void setup() {
+  pinMode(SENSOR_PIN, INPUT);
+  pinMode(PWM_FORWARD, OUTPUT);
+  pinMode(PWM_REVERSE, OUTPUT);
+
+  lastSample = millis();
+}
+
+void loop() {
+  unsigned long now = millis();
+
+  if ((unsigned long)(now - lastSample) < SAMPLE_MS) {
+    return;
+  }
+
+  lastSample = now;
+
+  float measuredOutput = readPlant();
+  float error = SETPOINT - measuredOutput;
+
+  float P = Kp * error;
+  float D = Kd * (error - previousError) / Ts;
+
+  float newErrorSum = errorSum + error;
+  float candidateU = P + Ki * Ts * newErrorSum + D;
+
+  if (ANTI_WINDUP && Ki > 0) {
+    if ((candidateU > CONTROL_LIMIT && error > 0) ||
+        (candidateU < -CONTROL_LIMIT && error < 0)) {
+      newErrorSum = errorSum;
+    }
+  }
+
+  float I = Ki * Ts * newErrorSum;
+  float u = P + I + D;
+
+  u = constrain(u, -CONTROL_LIMIT, CONTROL_LIMIT);
+
+  applyControl(u);
+
+  errorSum = newErrorSum;
+  previousError = error;
+}
+`;
+
+  document.getElementById('p3-arduino-code').value = code;
+}
+
+function checkP3Prediction() {
+
+  const prediction =
+    document.getElementById('p3-prediction').value;
+
+  const feedback =
+    document.getElementById('p3-prediction-feedback');
+
+  if (!prediction) {
+    feedback.textContent = 'Please choose a prediction first.';
+    feedback.removeAttribute('data-result');
+    return;
+  }
+
+  // Compare two sampling times using the same controller
+  const smallTs = simulateP3(0.02, 9, 0, 0, false);
+  const largeTs = simulateP3(0.30, 9, 0, 0, false);
+
+  // Measure oscillation range during the last 3 seconds
+  function oscillationRange(result) {
+    const values = result.output.filter(
+      (_, i) => result.time[i] >= 5
+    );
+
+    return Math.max(...values) - Math.min(...values);
+  }
+
+  const rangeSmall = oscillationRange(smallTs);
+  const rangeLarge = oscillationRange(largeTs);
+  const difference = rangeLarge - rangeSmall;
+
+  const actual = difference > 0.1
+    ? 'increase'
+    : difference < -0.1
+      ? 'decrease'
+      : 'same';
+
+  const correct = prediction === actual;
+
+  feedback.dataset.result = correct ? 'correct' : 'incorrect';
+  feedback.textContent =
+    (correct ? 'Correct prediction! ' : 'Incorrect prediction. ') +
+    'Oscillation range at Ts = 0.02 s: ' +
+    rangeSmall.toFixed(3) +
+    '. At Ts = 0.30 s: ' +
+    rangeLarge.toFixed(3) +
+    '. Increasing Ts ' +
+    (actual === 'increase'
+      ? 'increases oscillations.'
+      : actual === 'decrease'
+        ? 'decreases oscillations.'
+        : 'causes almost no change.');
+
+}
+
+// Update graph whenever a slider changes
+['p3-ts', 'p3-kp', 'p3-ki', 'p3-kd'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateP3);
+});
+
+// Draw graph when Homework 2 is opened
+document.getElementById('open-homework-2').addEventListener('click', updateP3);
+// Update simulation when Anti-Windup changes
+document.getElementById('p3-anti-windup').addEventListener('change', updateP3);
+
+document.getElementById('p3-copy-code').addEventListener('click', async () => {
+    const codeField = document.getElementById('p3-arduino-code');
+    const status = document.getElementById('p3-copy-status');
+
+    try {
+      await navigator.clipboard.writeText(codeField.value);
+      status.textContent = 'Arduino code copied successfully!';
+    } catch {
+      codeField.focus();
+      codeField.select();
+
+      if (document.execCommand('copy')) {
+        status.textContent = 'Arduino code copied successfully!';
+      } else {
+        status.textContent = 'Press Ctrl+C to copy the selected code.';
+      }
+    }
+  });
+
+document.getElementById('p3-check-prediction')
+  .addEventListener('click', checkP3Prediction);
+
+})();
+</script>
+
 </body>
 
 </html>
-
