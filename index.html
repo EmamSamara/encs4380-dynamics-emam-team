@@ -4044,7 +4044,21 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
   const p3Layout = document.getElementById('p3-layout');
   const container = document.getElementById('homework-two-intro');
 
+const p4Section = document.getElementById('p4-page-title');
+
+if (p4Section) {
+  p4Section.previousElementSibling
+    ? container.insertBefore(
+        p3Layout.content.cloneNode(true),
+        p4Section.previousElementSibling
+      )
+    : container.insertBefore(
+        p3Layout.content.cloneNode(true),
+        p4Section
+      );
+} else {
   container.appendChild(p3Layout.content.cloneNode(true));
+}
 
   // Sampling Time controls
   const tsSlider = document.getElementById('p3-ts');
