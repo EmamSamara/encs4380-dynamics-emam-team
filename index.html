@@ -3746,6 +3746,91 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
     responsive: true,
     displaylogo: false
   });
+
+  // P4: Simulate the hidden plant using P1 functions
+  function updateP4Response() {
+    if (!window.p4Challenge) return;
+
+    const plant = window.p4Challenge.plant;
+
+    const kp = Number(document.getElementById('p4-kp').value);
+    const ki = Number(document.getElementById('p4-ki').value);
+    const kd = Number(document.getElementById('p4-kd').value);
+
+    const settings = {
+      kp: kp,
+      ki: ki,
+      kd: kd,
+      setpoint: 1,
+      duration: 20,
+      timeStep: 0.005,
+      controlMin: -10,
+      controlMax: 10
+    };
+
+    try {
+      let result;
+
+      if (plant.type === 'first-order') {
+        result = simulateFirstOrderClosedLoop({
+          gain: plant.gain,
+          tau: plant.tau,
+          ...settings
+        });
+      } else {
+        result = simulateSecondOrderClosedLoop({
+          mass: plant.mass,
+          damping: plant.damping,
+          stiffness: plant.stiffness,
+          ...settings
+        });
+      }
+
+      const traces = [
+        {
+          x: result.time,
+          y: result.output,
+          mode: 'lines',
+          name: 'Output y(t)',
+          line: { color: '#61afef', width: 3 }
+        },
+        {
+          x: result.time,
+          y: result.reference,
+          mode: 'lines',
+          name: 'Setpoint',
+          line: { color: '#98c379', dash: 'dash', width: 2 }
+        }
+      ];
+
+      Plotly.react('p4-response-plot', traces, {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font: { color: '#e0e0e0' },
+        xaxis: { title: 'Time (s)' },
+        yaxis: { title: 'Output y(t)' },
+        margin: { t: 30, b: 50, l: 60, r: 20 }
+      }, {
+        responsive: true,
+        displaylogo: false
+      });
+
+    } catch (error) {
+      console.error('P4 simulation error:', error);
+      document.getElementById('p4-plant-status').textContent =
+        'Unable to simulate these PID settings.';
+    }
+  }
+
+  // Update after generating a new plant
+  newPlantButton.addEventListener('click', updateP4Response);
+
+  // Update when a PID slider changes
+  ['kp', 'ki', 'kd'].forEach(gain => {
+    document.getElementById('p4-' + gain)
+      .addEventListener('input', updateP4Response);
+  });
+
 })();
 </script>
  
