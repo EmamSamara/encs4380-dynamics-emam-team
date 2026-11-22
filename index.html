@@ -3662,6 +3662,38 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   </div>
 </section>
+<section class="p1-card">
+  <h2>Result &amp; Score</h2>
+  <button id="p4-submit" class="p1-action-button" type="button">Submit Tuning</button>
+  <p id="p4-result" class="p1-feedback" role="status">Click New Random Plant to start.</p>
+  <p id="p4-score" class="p1-value">Score: 0 / 0</p>
+</section>
+<section class="p1-card">
+  <h2>Predict, then Check</h2>
+
+  <p class="p1-secondary">
+    With Kp = 5 and Kd = 0, what happens to the steady-state error
+    when Ki increases from 0 to 1?
+  </p>
+
+  <label class="p1-field" for="p4-prediction">
+    Your Prediction:
+    <select id="p4-prediction" class="p1-prediction">
+      <option value="">Choose your prediction</option>
+      <option value="zero">It becomes zero</option>
+      <option value="smaller">It gets smaller but not zero</option>
+      <option value="same">It stays the same</option>
+    </select>
+  </label>
+
+  <button id="p4-check-prediction" class="p1-action-button" type="button">
+    Check with Simulation
+  </button>
+
+  <p id="p4-prediction-feedback" class="p1-feedback">
+    Choose a prediction before checking.
+  </p>
+</section>
 </template>
 
 <!-- P4 JavaScript -->
@@ -3678,7 +3710,15 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
   // Store the current hidden plant.
   let currentPlant = null;
+  // P4 round state
+  let p4AllPass = false, p4Submitted = false, p4Played = 0, p4Score = 0;
 
+  function setP4Metric(valueId, statusId, text, ok) {
+    document.getElementById(valueId).textContent = text;
+    const s = document.getElementById(statusId);
+    s.textContent = ok ? 'PASS' : 'FAIL';
+    s.style.color = ok ? '#98c379' : '#e06c75';
+  }
   function generateRandomPlant() {
     const firstOrder = Math.random() < 0.5;
 
@@ -3785,6 +3825,25 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
           ...settings
         });
       }
+      // ---- P4: metrics + pass/fail (reuses P1 functions) ----
+      const firstOrder = plant.type === 'first-order';
+      const plantGain  = firstOrder ? plant.gain : 1;
+      const stable = p1IsTheoreticallyStable(firstOrder, plant, { kp, ki, kd });
+      const target = p1SteadyStateValue(kp, ki, 1, 10, plantGain);
+      const m = calculateP1PerformanceMetrics(result, target, 1);
+      const tg = window.p4Challenge.targets;
+
+      const osOk = m.overshoot <= tg.maxOvershoot;
+      const stOk = m.settlingTime !== null && m.settlingTime <= tg.maxSettlingTime;
+      const ssOk = stable && m.steadyStateErrorPercent <= tg.maxSteadyStateErrorPercent;
+      p4AllPass = osOk && stOk && ssOk;
+
+      setP4Metric('p4-overshoot', 'p4-overshoot-status',
+        m.overshoot.toFixed(1) + '%', osOk);
+      setP4Metric('p4-settling-time', 'p4-settling-status',
+        m.settlingTime === null ? 'Not settled' : m.settlingTime.toFixed(2) + ' s', stOk);
+      setP4Metric('p4-steady-state-error', 'p4-error-status',
+        stable ? m.steadyStateErrorPercent.toFixed(1) + '%' : 'Unstable', ssOk);
 
       const traces = [
         {
@@ -3817,6 +3876,10 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
 
     } catch (error) {
       console.error('P4 simulation error:', error);
+      p4AllPass = false;
+      setP4Metric('p4-overshoot', 'p4-overshoot-status', 'N/A', false);
+      setP4Metric('p4-settling-time', 'p4-settling-status', 'N/A', false);
+      setP4Metric('p4-steady-state-error', 'p4-error-status', 'N/A', false);
       document.getElementById('p4-plant-status').textContent =
         'Unable to simulate these PID settings.';
     }
@@ -3830,7 +3893,90 @@ document.getElementById('p1-prediction-scenario').addEventListener('change', () 
     document.getElementById('p4-' + gain)
       .addEventListener('input', updateP4Response);
   });
+  // ---- P4: submit + score ----
+  document.getElementById('p4-submit').addEventListener('click', () => {
+    const result = document.getElementById('p4-result');
+    if (!window.p4Challenge) {
+      result.textContent = 'Click New Random Plant first.';
+      return;
+    }
+    if (p4Submitted) {
+      result.textContent = 'Already submitted. Generate a new plant for another round.';
+      return;
+    }
+    p4Submitted = true;
+    p4Played++;
+    if (p4AllPass) p4Score++;
+    result.dataset.result = p4AllPass ? 'pass' : 'fail';
+    result.textContent = p4AllPass
+      ? 'PASS: all three targets met.'
+      : 'FAIL: at least one target was missed. Try a new plant.';
+    document.getElementById('p4-score').textContent =
+      'Score: ' + p4Score + ' / ' + p4Played;
+  });
 
+  // New plant = new round
+  newPlantButton.addEventListener('click', () => {
+    p4Submitted = false;
+    const result = document.getElementById('p4-result');
+    result.removeAttribute('data-result');
+    result.textContent = 'Tune the gains, then press Submit.';
+  });
+    // ---- P4: Predict, then check ----
+  function p4SteadyStateError(plant, kp, ki, kd) {
+    const firstOrder = plant.type === 'first-order';
+    const settings = {
+      kp, ki, kd, setpoint: 1, duration: 20, timeStep: 0.005,
+      controlMin: -10, controlMax: 10
+    };
+    const sim = firstOrder
+      ? simulateFirstOrderClosedLoop({ gain: plant.gain, tau: plant.tau, ...settings })
+      : simulateSecondOrderClosedLoop({
+          mass: plant.mass, damping: plant.damping,
+          stiffness: plant.stiffness, ...settings
+        });
+    const target = p1SteadyStateValue(kp, ki, 1, 10, firstOrder ? plant.gain : 1);
+    return calculateP1PerformanceMetrics(sim, target, 1).steadyStateErrorPercent;
+  }
+
+  document.getElementById('p4-check-prediction').addEventListener('click', () => {
+    const prediction = document.getElementById('p4-prediction').value;
+    const feedback = document.getElementById('p4-prediction-feedback');
+
+    if (!window.p4Challenge) {
+      feedback.textContent = 'Click New Random Plant first.';
+      feedback.removeAttribute('data-result');
+      return;
+    }
+    if (!prediction) {
+      feedback.textContent = 'Please choose a prediction first.';
+      feedback.removeAttribute('data-result');
+      return;
+    }
+
+    const plant = window.p4Challenge.plant;
+    const errP  = p4SteadyStateError(plant, 5, 0, 0);   // Kp only
+    const errPI = p4SteadyStateError(plant, 5, 1, 0);   // Kp + Ki
+
+    const actual = errPI < 0.5 ? 'zero'
+                 : errPI < errP - 0.5 ? 'smaller'
+                 : 'same';
+    const correct = prediction === actual;
+
+    feedback.dataset.result = correct ? 'correct' : 'incorrect';
+    feedback.textContent =
+      (correct ? 'Correct prediction! ' : 'Incorrect prediction. ') +
+      'Steady-state error with Ki = 0: ' + errP.toFixed(1) +
+      '%. With Ki = 1: ' + errPI.toFixed(1) + '%. ' +
+      'The integral term keeps accumulating error until it reaches zero.';
+
+    // Like P1 and P2: move the sliders to the checked setting so the user can explore
+    [['kp', 5], ['ki', 1], ['kd', 0]].forEach(([gain, value]) => {
+      const slider = document.getElementById('p4-' + gain);
+      slider.value = value;
+      slider.dispatchEvent(new Event('input'));
+    });
+  });
 })();
 </script>
  
