@@ -109,7 +109,7 @@ The toolkit includes checks against the following theoretical results, using the
 ### P4 — Tuning Challenge
 ![P4 Random Plant Generation and tuning](images/P4a.png)
 
-### Module 4 — Tuning Challenge (Continue)
+### P4 — Tuning Challenge (Continue)
 ![P4 Output and Performance Measure](images/P4b.png)
 
 ## Technologies
